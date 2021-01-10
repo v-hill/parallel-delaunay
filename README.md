@@ -4,10 +4,10 @@ Parallel implementation of Guibas &amp; Stolfi's divide-and-conquer algorithm
 ## Structure
 This repository is currently structured as follows.
 
-    ├── delaunay-triangulation         
+    ├── delaunay_triangulation         
         ├── linear_algebra
         │   └── linear_algebra.py
-        └── points-tools   
+        └── points_tools   
             └── generate_values.py
 
 ## References
