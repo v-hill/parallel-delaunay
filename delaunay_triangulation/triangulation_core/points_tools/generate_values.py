@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+"""
+This module contains functions for generating co-ordinate values, which are 
+used to test the Delaunay triangulation algorithm. 
+"""
+
 # Standard library imports
 import numpy as np
 from numpy.random import default_rng
