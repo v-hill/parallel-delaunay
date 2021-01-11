@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+This module contains functions for algebra on python list objects.
+"""
 
 # Standard library imports
 from math import sqrt
