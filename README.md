@@ -1,15 +1,23 @@
 # delaunay-triangulation
-Parallel implementation of Guibas &amp; Stolfi's divide-and-conquer algorithm
+This library is used for computing the [Delaunay triangulation](https://en.wikipedia.org/wiki/Delaunay_triangulation) of 2D point sets. 
+
+**Why is this library special?**
+
+Speed! This is a pure python implemenation of the Guibas &amp; Stolfi's divide and conquer algorithm. The divide and conquer algorithm has been shown to be the [fastest](https://people.eecs.berkeley.edu/~jrs/meshpapers/SuDrysdale.pdf) DT generation technique, with O(*n* log *n*) running time. Furthermore, this code has been parallelised using the MPI for Python ([mpi4py](https://github.com/mpi4py/mpi4py)) library to utilise multiple CPU cores. This allows the algorithm to be efficiently scaled for distributed computing across supercomputer nodes.
 
 ## Structure
 This repository is currently structured as follows.
 
-    ├── delaunay_triangulation         
-        ├── linear_algebra
-        │   └── linear_algebra.py
-        └── points_tools   
-            └── generate_values.py
-
+    ├── delaunay_triangulation       
+        ├── triangulation_core
+            ├── linear_algebra
+                └── linear_algebra.py
+            ├── points_tools   
+                └── generate_values.py
+            ├── edge_topology.py
+            └── triangulation_primitives.py  
+        └── utilities    
+            └── settings.py
 ## References
 <a id="1">[1]</a> 
 Guibas, Leonidas and Stolfi, Jorge
