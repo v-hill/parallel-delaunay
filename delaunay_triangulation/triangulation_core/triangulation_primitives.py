@@ -105,3 +105,15 @@ def triangle_primitive(pts_subset):
     triang.set_extreme_edges(edge1.index, edge2_sym.index)
     return triang
     
+def make_primitives(split_pts):
+    primitives = []
+    for pts_subset in split_pts:
+        
+        if len(pts_subset) == 2:
+            # 2 points define a single edge
+            primitives.append(line_primitive(pts_subset))
+    
+        elif len(pts_subset) == 3:
+            # 3 points define a single triangle
+            primitives.append(triangle_primitive(pts_subset))
+    return primitives
