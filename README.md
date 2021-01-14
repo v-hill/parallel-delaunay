@@ -13,8 +13,10 @@ This repository is currently structured as follows.
             ├── linear_algebra
                 └── linear_algebra.py
             ├── points_tools   
-                └── generate_values.py
+                ├── generate_values.py
+                └── split_list.py
             ├── edge_topology.py
+            ├── triangulation.py
             └── triangulation_primitives.py  
         └── utilities    
             └── settings.py
