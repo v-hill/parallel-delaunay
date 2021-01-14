@@ -5,6 +5,10 @@ This library is used for computing the [Delaunay triangulation](https://en.wikip
 
 Speed! This is a pure python implemenation of the Guibas &amp; Stolfi's divide and conquer algorithm. The divide and conquer algorithm has been shown to be the [fastest](https://people.eecs.berkeley.edu/~jrs/meshpapers/SuDrysdale.pdf) DT generation technique, with O(*n* log *n*) running time. Furthermore, this code has been parallelised using the MPI for Python ([mpi4py](https://github.com/mpi4py/mpi4py)) library to utilise multiple CPU cores. This allows the algorithm to be efficiently scaled for distributed computing across supercomputer nodes.
 
+## PLEASE NOTE
+
+**This library is currently a work in progress. As such it is currently about 1000 lines of function definitions with no running script.**
+
 ## Structure
 This repository is currently structured as follows.
 
