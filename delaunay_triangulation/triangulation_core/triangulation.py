@@ -155,3 +155,100 @@ def candidate_decider(rcand, lcand, lcand_valid, triangulation):
     pt4 = triangulation.points[triangulation.edges[lcand].dest]
     result = lcand_valid and linalg.in_circle(pt1, pt2, pt3, pt4)
     return result
+
+# ----------------------------- Merging functions -----------------------------
+
+def combine_triangulations(ldi, rdi, hull_left, hull_right):
+    """
+    This function takes two TriangulationEdges class objects and combines
+    them into a single TriangulationEdges object.
+
+    Parameters
+    ----------
+    ldi : TYPE
+        DESCRIPTION.
+    rdi : TYPE
+        DESCRIPTION.
+    hull_left : TriangulationEdges
+        DESCRIPTION.
+    hull_right : TriangulationEdges
+        DESCRIPTION.
+
+    Returns
+    -------
+    base : TYPE
+        DESCRIPTION.
+    edges : TriangulationEdges
+        DESCRIPTION.
+    """
+    ldo = hull_left.inner
+    rdo = hull_right.outer
+    rdi += hull_left.num_edges
+    rdo += hull_left.num_edges
+    
+    edges = hull_left.combine_triangulations(hull_right)
+    base = edges.connect(edges.edges[ldi].sym, rdi)
+    
+    # Correct the base edge
+    ldi_org = edges.points[edges.edges[ldi].org]
+    ldo_org = edges.points[edges.edges[ldo].org]
+    rdi_org = edges.points[edges.edges[rdi].org]
+    rdo_org = edges.points[edges.edges[rdo].org]
+    
+    if linalg.list_equal(ldi_org, ldo_org):
+        ldo = base
+    if linalg.list_equal(rdi_org, rdo_org):
+        rdo = edges.edges[base].sym
+    
+    edges.set_extreme_edges(ldo, rdo)
+    
+    return base, edges
+
+def zip_hulls(base, triang):
+    """
+    
+    Parameters
+    ----------
+    base : TYPE
+        DESCRIPTION.
+    triang : TriangulationEdges 
+        DESCRIPTION.
+
+    Returns
+    -------
+    d_triang : TriangulationEdges 
+        Instance of TriangulationEdges class object containing the finished
+        Delaunay triangulation of the input triangulation. 
+    """
+    while True:
+        # Make variables for commonly used base edge points
+        base1 = triang.points[triang.edges[base].org]
+        base2 = triang.points[triang.edges[base].dest]
+        
+        # Find the first candidate edges for triangulation from each subset
+        rcand = triang.edges[triang.edges[base].sym].onext
+        pt1 = triang.points[triang.edges[rcand].dest]
+        rcand_valid = linalg.on_right(base1, base2, pt1)
+        
+        lcand = triang.edges[base].oprev
+        pt2 = triang.points[triang.edges[lcand].dest]
+        lcand_valid = linalg.on_right(base1, base2, pt2)
+        
+        # If neither candidate is valid, hull merge is complete
+        if not rcand_valid and not lcand_valid:
+            break
+        
+        if rcand_valid:
+            triang, rcand = rcand_func(triang, rcand, base1, base2)
+
+        if lcand_valid:
+            triang, lcand = lcand_func(triang, lcand, base1, base2)
+        
+        lcand_strong_valid = candidate_decider(rcand, lcand, lcand_valid, triang)
+        
+        if not rcand_valid or lcand_strong_valid:
+            base = triang.connect(lcand, triang.edges[base].sym)
+        else:
+            base = triang.connect(triang.edges[base].sym, triang.edges[rcand].sym)
+            
+    return triang
