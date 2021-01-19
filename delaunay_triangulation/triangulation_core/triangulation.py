@@ -206,13 +206,16 @@ def combine_triangulations(ldi, rdi, hull_left, hull_right):
 
 def zip_hulls(base, triang):
     """
+    Given a triangulation containing two seperate hulls and the base edge 
+    connecting the hulls, triangulate the space between the hulls. This is
+    refered to as 'zipping' the hulls together.
     
     Parameters
     ----------
-    base : TYPE
-        DESCRIPTION.
+    base : int
+        index of base edge
     triang : TriangulationEdges 
-        DESCRIPTION.
+        Incomplete triangulation, with known base edge
 
     Returns
     -------
@@ -250,5 +253,4 @@ def zip_hulls(base, triang):
             base = triang.connect(lcand, triang.edges[base].sym)
         else:
             base = triang.connect(triang.edges[base].sym, triang.edges[rcand].sym)
-            
     return triang
