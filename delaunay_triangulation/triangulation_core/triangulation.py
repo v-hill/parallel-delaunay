@@ -254,3 +254,36 @@ def zip_hulls(base, triang):
         else:
             base = triang.connect(triang.edges[base].sym, triang.edges[rcand].sym)
     return triang
+
+def merge_triangulations(groups):
+    """
+    Each entry of the groups list is a list of two (or one) triangulations. 
+    This function takes each pair of triangulations and combines them. 
+
+    Parameters
+    ----------
+    groups : list
+        List of pairs of triangulations
+
+    Returns
+    -------
+    list
+        List of merged triangulations
+
+    """
+    triangulations = []
+    for group in groups:
+        if len(group)==2:
+            # Find the first edges to connect the seperate triangulations
+            ldi, rdi = lowest_common_tangent(group[0], group[1])
+            
+            # Combine the two hulls into a single set of edges
+            base, d_triang = combine_triangulations(ldi, rdi, group[0], group[1])
+            
+            # Given the starting base edge, fill in the edges between the hulls
+            d_triang = zip_hulls(base, d_triang)
+            triangulations.append(d_triang)
+        else:
+            triangulations.append(group[0])
+    return [triangulations[i:i+2] for i in range(0, len(triangulations), 2)]
+    
