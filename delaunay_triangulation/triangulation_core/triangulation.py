@@ -269,7 +269,6 @@ def merge_triangulations(groups):
     -------
     list
         List of merged triangulations
-
     """
     triangulations = []
     for group in groups:
