@@ -286,3 +286,22 @@ def merge_triangulations(groups):
             triangulations.append(group[0])
     return [triangulations[i:i+2] for i in range(0, len(triangulations), 2)]
     
+def recursive_group_merge(groups):
+    """
+    Recursivly call the merge_triangulations() function, until all points have
+    been triangulated.
+
+    Parameters
+    ----------
+    groups : list
+        List of pairs of triangulations
+
+    Returns
+    -------
+    list
+        List containing the single completed Delauney triangulation
+    """
+    while len(groups[0])!=1:
+        groups = merge_triangulations(groups)
+    return groups
+
