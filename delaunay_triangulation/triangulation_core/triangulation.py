@@ -305,3 +305,39 @@ def recursive_group_merge(groups):
         groups = merge_triangulations(groups)
     return groups
 
+# ------------------------------- Main function -------------------------------
+
+def triangulate(pts_subset):
+    """
+    This function encapsulates the whole triangulation algorithm into four
+    steps. The function takes as input a list of points. Each point is of the 
+    form [x, y], where x and y are the coordinates of the point.
+    
+    Step 1) The list of points is split into groups. Each group has exactly 
+            two or three points.
+    Step 2) For each group of two point, a single edge is generated. For each
+            group of three points, three edges forming a triangle are 
+            generated. These are the 'primitive' triangulations. 
+    Step 3) The primitive triangulations are paired into groups. 
+    Step 4) The groups are then recursively merged until there is only a 
+            single triangulation of all points remaining.
+
+    Parameters
+    ----------
+    pts_subset : list
+        A list of points with the form [ [x1, y1], [x2, y2], ..., [xn, yn] ]
+        The first element of each list represents the x-coordinate, the second 
+        entry the y-coordinate. 
+
+    Returns
+    -------
+    out : list
+        List with a single element. The TriangulationEdges class object with
+        the completed Delauney triangulation of the input points. 
+        See TriangulationEdges docstring for further info.
+    """
+    split_pts = split_list.groups_of_3(pts_subset)
+    primitives = make_primitives(split_pts)
+    groups = [primitives[i:i+2] for i in range(0, len(primitives), 2)]
+    groups = recursive_group_merge(groups)
+    return groups[0][0]
