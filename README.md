@@ -22,8 +22,10 @@ This repository is currently structured as follows.
             ├── edge_topology.py
             ├── triangulation.py
             └── triangulation_primitives.py  
-        └── utilities    
+        ├── utilities    
             └── settings.py
+        └── triangulation_test.py
+        
 ## References
 <a id="1">[1]</a> 
 Guibas, Leonidas and Stolfi, Jorge
