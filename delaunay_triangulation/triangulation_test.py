@@ -29,5 +29,4 @@ positions = lexigraphic_sort(positions)
 start = time.time()
 triangulation = triangulate(positions)
 elapsed = time.time() - start
-
 print(f"{num_points} {elapsed*1000:0.3f} ms")
