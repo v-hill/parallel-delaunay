@@ -1,3 +1,7 @@
+"""
+This script tests the full MPI Delaunay triangulation algorithm.
+"""
+
 from mpi4py import MPI
 
 # Code from local files
