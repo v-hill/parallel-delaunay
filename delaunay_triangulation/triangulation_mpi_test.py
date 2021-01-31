@@ -52,5 +52,5 @@ if rank == 0:
     elapsed = wt_end - wt_start
     print(f"Total elapsed time: {elapsed*1000:0.3f} ms")
 
-
-# mpiexec -np 4 python .\triangulation_mpi.py
+# Run using the following command format 
+# mpiexec -np 4 python .\triangulation_mpi_test.py
