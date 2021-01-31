@@ -24,6 +24,7 @@ This repository is currently structured as follows.
             └── triangulation_primitives.py  
         ├── utilities    
             └── settings.py
+        ├── triangulation_mpi_test.py
         └── triangulation_test.py
         
 ## References
