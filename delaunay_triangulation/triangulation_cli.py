@@ -72,3 +72,30 @@ def set_options(world_options):
                **points_options}
     
     return options
+
+def main(options):
+    # Setup world
+    WORLD_SIZE = [0, options['max_x_val'], 
+                  0, options['max_y_val']]
+    world = World(WORLD_SIZE)
+    
+    num_points = options['number_of_points']
+    
+    start = time.time()
+    world_size = [0, 1000, 0, 1000]
+    world = World(world_size)
+    num_points = 1000
+    
+    # positions = generate_values.random(num_points, world)
+    # positions = lexigraphic_sort(positions)
+    
+    # start = time.time()
+    # triangulation = triangulate(positions)
+    # elapsed = time.time() - start
+
+    # print(f"{num_points} {elapsed*1000:0.3f} ms")
+
+
+if __name__ == '__main__':
+    options = set_options(world_options)
+    main(options)
