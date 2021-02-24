@@ -1,5 +1,8 @@
 # delaunay-triangulation
-This library is used for computing the [Delaunay triangulation](https://en.wikipedia.org/wiki/Delaunay_triangulation) of 2D point sets. 
+This library is used for computing the [Delaunay triangulation](https://en.wikipedia.org/wiki/Delaunay_triangulation) of 2D point sets.
+
+An example Delaunay triangulation output for 32 points is shown below.
+<img src="./images/Figure 2021-02-24 110617.png" alt="drawing" width="500"/>
 
 **Why is this library special?**
 
