@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
-
 """
-This module contains functions for generating co-ordinate values, which are 
-used to test the Delaunay triangulation algorithm. 
+This module contains functions for generating co-ordinate values, which are
+used to test the Delaunay triangulation algorithm.
 """
 
 # Standard library imports
@@ -13,13 +11,13 @@ from math import sqrt, ceil
 # ----------------------------- Points generators -----------------------------
 
 """
-The following functions are used to generate the inital values for the 
+The following functions are used to generate the inital values for the
 position of each point.
 """
 
 def random(num_points, span):
     """
-    This function generates a set of random x and y coordinates using the 
+    This function generates a set of random x and y coordinates using the
     numpy uniform random number generator 'numpy.random.default_rng().uniform'.
 
     Parameters
@@ -38,10 +36,11 @@ def random(num_points, span):
     x_vals = default_rng().uniform(span.x_min, span.x_max, num_points)
     y_vals = default_rng().uniform(span.y_min, span.y_max, num_points)
     pts = [list(i) for i in zip(x_vals.tolist(), y_vals.tolist())]
-    
+
     # Alternative version to return numpy array
     # pts = np.concatenate((x_vals, y_vals)).reshape(-1, 2)
     return pts
+
 
 def lattice(num_points, span):
     """
@@ -69,7 +68,7 @@ def lattice(num_points, span):
     y_vals = np.linspace(span.y_min, span.y_max, num_sqrt)
     _X, _Y = np.meshgrid(x_vals, y_vals)
     pts = [list(i) for i in zip(_X.ravel().tolist(), _Y.ravel().tolist())]
-    
+
     # If the number of points is not square, remove excess points randomly
     if not sqrt(num_points).is_integer():
         current_num = len(pts)
