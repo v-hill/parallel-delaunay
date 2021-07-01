@@ -8,15 +8,12 @@ import timeit
 import time
 
 # Repo module imports
-from utilities.settings import World
-from triangulation_core.linear_algebra.linear_algebra import lexigraphic_sort
-import triangulation_core.points_tools.generate_values as generate_values
-from triangulation_core.triangulation import triangulate
-# from triangulation_core.triangulation import points_splitter_3
-# from triangulation_core.triangulation import make_primitives
-# from triangulation_core.triangulation import recursive_group_merge
+from delaunay_triangulation.utilities.settings import World
+from delaunay_triangulation.triangulation_core.linear_algebra import lexigraphic_sort
+import delaunay_triangulation.triangulation_core.points_tools.generate_values as generate_values
+from delaunay_triangulation.triangulation_core.triangulation import triangulate
 
-# -----------------------------------------------------------------------------  
+# -----------------------------------------------------------------------------
 
 start = time.time()
 world_size = [0, 1000, 0, 1000]

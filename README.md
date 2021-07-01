@@ -13,16 +13,16 @@ This repository is currently structured as follows.
 
     ├── delaunay_triangulation       
         ├── triangulation_core
-            ├── linear_algebra
-                └── linear_algebra.py
             ├── points_tools   
                 ├── generate_values.py
                 └── split_list.py
             ├── edge_topology.py
+            ├── linear_algebra.py
             ├── triangulation.py
             └── triangulation_primitives.py  
         ├── utilities    
             └── settings.py
+        ├── triangulation_cli.py
         ├── triangulation_mpi_test.py
         └── triangulation_test.py
         

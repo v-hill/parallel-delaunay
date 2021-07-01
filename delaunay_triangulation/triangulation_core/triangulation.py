@@ -9,9 +9,9 @@ This algorithm computes the Delaunay triangulation of a set of input points.
 # ---------------------------------- Imports ----------------------------------
 
 # Repo module imports
-import triangulation_core.points_tools.split_list as split_list
-import triangulation_core.linear_algebra.linear_algebra as linalg
-from triangulation_core.triangulation_primitives import make_primitives
+import delaunay_triangulation.triangulation_core.points_tools.split_list as split_list
+import delaunay_triangulation.triangulation_core.linear_algebra as linalg
+from delaunay_triangulation.triangulation_core.triangulation_primitives import make_primitives
 
 # --------------------------- Edge finding functions --------------------------
 

@@ -6,13 +6,7 @@ as well as defining classes for storing multiple edge objects.
 # -------------------- Allow imports from sibling folders ---------------------
 
 # Standard library imports
-from linear_algebra.linear_algebra import list_equal
-import os
-import sys
-
-currentdir = os.path.dirname(os.path.realpath(__file__))
-parentdir = os.path.dirname(currentdir)
-sys.path.append(parentdir)
+from delaunay_triangulation.triangulation_core.linear_algebra import list_equal
 
 # --------------------------------- Edge class --------------------------------
 

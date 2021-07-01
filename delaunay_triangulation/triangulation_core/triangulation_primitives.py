@@ -6,8 +6,8 @@ respectively known as the line-primitive and the triangle-primitive.
 # ---------------------------------- Imports ----------------------------------
 
 # Repo module imports
-import triangulation_core.edge_topology as edge_topology
-import triangulation_core.linear_algebra.linear_algebra as linalg
+import delaunay_triangulation.triangulation_core.edge_topology as edge_topology
+import delaunay_triangulation.triangulation_core.linear_algebra as linalg
 
 # -------------------------------- Definitions --------------------------------
 
