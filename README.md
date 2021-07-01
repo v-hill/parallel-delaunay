@@ -11,7 +11,7 @@ Speed! This is a pure python implemenation of the Guibas &amp; Stolfi's divide a
 ## Structure
 This repository is currently structured as follows.
 
-    ├── delaunay_triangulation       
+    ├── src      
         ├── triangulation_core
             ├── points_tools   
                 ├── generate_values.py

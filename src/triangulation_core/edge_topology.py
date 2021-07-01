@@ -6,9 +6,10 @@ as well as defining classes for storing multiple edge objects.
 # -------------------- Allow imports from sibling folders ---------------------
 
 # Standard library imports
-from delaunay_triangulation.triangulation_core.linear_algebra import list_equal
+from triangulation_core.linear_algebra import list_equal
 
 # --------------------------------- Edge class --------------------------------
+
 
 class Edge():
     """
@@ -129,6 +130,7 @@ def setup_edge(origin, dest, edge_idx):
 
 # -------------------------------- Edges class --------------------------------
 
+
 class Edges():
     def __init__(self):
         self.edges = []
@@ -227,6 +229,7 @@ class Edges():
         return unique
 
 # ---------------------------- Triangulation class ----------------------------
+
 
 class TriangulationEdges(Edges):
     def __init__(self, points_subset):

@@ -9,10 +9,10 @@ import argparse
 import time
 
 # Repo module imports
-from delaunay_triangulation.triangulation_core.linear_algebra import lexigraphic_sort
-import delaunay_triangulation.triangulation_core.points_tools.generate_values as generate_values
-from delaunay_triangulation.triangulation_core.triangulation import triangulate
-from delaunay_triangulation.utilities.settings import World, world_options
+from triangulation_core.linear_algebra import lexigraphic_sort
+import triangulation_core.points_tools.generate_values as generate_values
+from triangulation_core.triangulation import triangulate
+from utilities.settings import World, world_options
 
 # -----------------------------------------------------------------------------
 

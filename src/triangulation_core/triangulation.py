@@ -9,11 +9,12 @@ This algorithm computes the Delaunay triangulation of a set of input points.
 # ---------------------------------- Imports ----------------------------------
 
 # Repo module imports
-import delaunay_triangulation.triangulation_core.points_tools.split_list as split_list
-import delaunay_triangulation.triangulation_core.linear_algebra as linalg
-from delaunay_triangulation.triangulation_core.triangulation_primitives import make_primitives
+import triangulation_core.points_tools.split_list as split_list
+import triangulation_core.linear_algebra as linalg
+from triangulation_core.triangulation_primitives import make_primitives
 
 # --------------------------- Edge finding functions --------------------------
+
 
 def lowest_common_tangent(h_left, h_right):
     """
@@ -160,6 +161,7 @@ def candidate_decider(rcand, lcand, lcand_valid, triangulation):
     return result
 
 # ----------------------------- Merging functions -----------------------------
+
 
 def combine_triangulations(ldi, rdi, hull_left, hull_right):
     """
@@ -316,6 +318,7 @@ def recursive_group_merge(groups):
     return groups
 
 # ------------------------------- Main function -------------------------------
+
 
 def triangulate(pts_subset):
     """

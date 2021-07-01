@@ -5,12 +5,12 @@ This script tests the full MPI Delaunay triangulation algorithm.
 from mpi4py import MPI
 
 # Code from local files
-from delaunay_triangulation.utilities.settings import World
-import delaunay_triangulation.triangulation_core.points_tools.generate_values as generate_values
-from delaunay_triangulation.triangulation_core.linear_algebra import lexigraphic_sort
-from delaunay_triangulation.triangulation_core.triangulation import points_splitter_3
-from delaunay_triangulation.triangulation_core.triangulation import make_primitives
-from delaunay_triangulation.triangulation_core.triangulation import recursive_group_merge
+from utilities.settings import World
+import triangulation_core.points_tools.generate_values as generate_values
+from triangulation_core.linear_algebra import lexigraphic_sort
+from triangulation_core.triangulation import points_splitter_3
+from triangulation_core.triangulation import make_primitives
+from triangulation_core.triangulation import recursive_group_merge
 
 num_points = 10000
 
