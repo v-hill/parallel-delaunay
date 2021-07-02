@@ -16,6 +16,7 @@ from utilities.settings import World, world_options
 
 # -----------------------------------------------------------------------------
 
+
 def set_options(world_options):
     points_options = {}
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
@@ -86,14 +87,13 @@ def main(options):
     world = World(world_size)
     num_points = 1000
 
-    # positions = generate_values.random(num_points, world)
-    # positions = lexigraphic_sort(positions)
+    positions = generate_values.random(num_points, world)
 
-    # start = time.time()
-    # triangulation = triangulate(positions)
-    # elapsed = time.time() - start
-
-    # print(f"{num_points} {elapsed*1000:0.3f} ms")
+    start = time.time()
+    positions = lexigraphic_sort(positions)
+    triangulation = triangulate(positions)
+    elapsed = time.time() - start
+    print(f"{num_points} points in {elapsed*1000:0.3f} ms")
 
 
 if __name__ == '__main__':
