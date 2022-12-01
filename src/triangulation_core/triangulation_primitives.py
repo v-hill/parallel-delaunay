@@ -15,7 +15,7 @@ import triangulation_core.linear_algebra as linalg
 def line_primitive(pts_subset):
     """
     This function takes in a list of two points and forms an edge.
-    The symetric edge, where the origin and destination points are reversed,
+    The symmetric edge, where the origin and destination points are reversed,
     is also constructed. These two edge are added into a new TriangulationEdges
     class object which is returned by the function.
 

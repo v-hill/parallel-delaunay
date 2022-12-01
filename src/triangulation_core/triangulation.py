@@ -8,9 +8,10 @@ This algorithm computes the Delaunay triangulation of a set of input points.
 
 # ---------------------------------- Imports ----------------------------------
 
+import triangulation_core.linear_algebra as linalg
+
 # Repo module imports
 import triangulation_core.points_tools.split_list as split_list
-import triangulation_core.linear_algebra as linalg
 from triangulation_core.triangulation_primitives import make_primitives
 
 # --------------------------- Edge finding functions --------------------------
@@ -72,7 +73,7 @@ def rcand_func(rhull, rcand, b1, b2):
     This function finds the candidate edge from the right hull triangulation.
     An initial candidate 'rcand' is given. This candidate is tested. If the
     candidate fails it is deleted from the triangulation and the next
-    potential candiate is considered. While a valid candidate has not been
+    potential candidate is considered. While a valid candidate has not been
     found this process continues until a valid candidate is found.
 
     Parameters
@@ -98,9 +99,9 @@ def rcand_func(rhull, rcand, b1, b2):
         rcand_onext_dest = rhull.edges[rhull.edges[rcand].onext].dest
         rcand_dest = rhull.edges[rcand].dest
         ccw_test = linalg.on_right(b1, b2, rhull.points[rcand_onext_dest])
-        next_cand_invalid = linalg.in_circle(b2, b1,
-                                             rhull.points[rcand_dest],
-                                             rhull.points[rcand_onext_dest])
+        next_cand_invalid = linalg.in_circle(
+            b2, b1, rhull.points[rcand_dest], rhull.points[rcand_onext_dest]
+        )
         if ccw_test and next_cand_invalid:
             t = rhull.edges[rcand].onext
             rhull.kill_edge(rcand)
@@ -120,9 +121,9 @@ def lcand_func(lhull, lcand, b1, b2):
         lcand_oprev_dest = lhull.edges[lhull.edges[lcand].oprev].dest
         lcand_dest = lhull.edges[lcand].dest
         ccw_test = linalg.on_right(b1, b2, lhull.points[lcand_oprev_dest])
-        next_cand_invalid = linalg.in_circle(b2, b1,
-                                             lhull.points[lcand_dest],
-                                             lhull.points[lcand_oprev_dest])
+        next_cand_invalid = linalg.in_circle(
+            b2, b1, lhull.points[lcand_dest], lhull.points[lcand_oprev_dest]
+        )
         if ccw_test and next_cand_invalid:
             t = lhull.edges[lcand].oprev
             lhull.kill_edge(lcand)
@@ -159,6 +160,7 @@ def candidate_decider(rcand, lcand, lcand_valid, triangulation):
     pt4 = triangulation.points[triangulation.edges[lcand].dest]
     result = lcand_valid and linalg.in_circle(pt1, pt2, pt3, pt4)
     return result
+
 
 # ----------------------------- Merging functions -----------------------------
 
@@ -212,9 +214,9 @@ def combine_triangulations(ldi, rdi, hull_left, hull_right):
 
 def zip_hulls(base, triang):
     """
-    Given a triangulation containing two seperate hulls and the base edge
+    Given a triangulation containing two separate hulls and the base edge
     connecting the hulls, triangulate the space between the hulls. This is
-    refered to as 'zipping' the hulls together.
+    referred to as 'zipping' the hulls together.
 
     Parameters
     ----------
@@ -254,14 +256,15 @@ def zip_hulls(base, triang):
             triang, lcand = lcand_func(triang, lcand, base1, base2)
 
         lcand_strong_valid = candidate_decider(
-            rcand, lcand, lcand_valid, triang)
+            rcand, lcand, lcand_valid, triang
+        )
 
         if not rcand_valid or lcand_strong_valid:
             base = triang.connect(lcand, triang.edges[base].sym)
         else:
             base = triang.connect(
-                triang.edges[base].sym,
-                triang.edges[rcand].sym)
+                triang.edges[base].sym, triang.edges[rcand].sym
+            )
     return triang
 
 
@@ -283,24 +286,27 @@ def merge_triangulations(groups):
     triangulations = []
     for group in groups:
         if len(group) == 2:
-            # Find the first edges to connect the seperate triangulations
+            # Find the first edges to connect the separate triangulations
             ldi, rdi = lowest_common_tangent(group[0], group[1])
 
             # Combine the two hulls into a single set of edges
             base, d_triang = combine_triangulations(
-                ldi, rdi, group[0], group[1])
+                ldi, rdi, group[0], group[1]
+            )
 
             # Given the starting base edge, fill in the edges between the hulls
             d_triang = zip_hulls(base, d_triang)
             triangulations.append(d_triang)
         else:
             triangulations.append(group[0])
-    return [triangulations[i:i + 2] for i in range(0, len(triangulations), 2)]
+    return [
+        triangulations[i : i + 2] for i in range(0, len(triangulations), 2)
+    ]
 
 
 def recursive_group_merge(groups):
     """
-    Recursivly call the merge_triangulations() function, until all points have
+    Recursively call the merge_triangulations() function, until all points have
     been triangulated.
 
     Parameters
@@ -316,6 +322,7 @@ def recursive_group_merge(groups):
     while len(groups[0]) != 1:
         groups = merge_triangulations(groups)
     return groups
+
 
 # ------------------------------- Main function -------------------------------
 
@@ -351,6 +358,6 @@ def triangulate(pts_subset):
     """
     split_pts = split_list.groups_of_3(pts_subset)
     primitives = make_primitives(split_pts)
-    groups = [primitives[i:i + 2] for i in range(0, len(primitives), 2)]
+    groups = [primitives[i : i + 2] for i in range(0, len(primitives), 2)]
     groups = recursive_group_merge(groups)
     return groups[0][0]

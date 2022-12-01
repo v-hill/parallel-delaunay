@@ -11,7 +11,7 @@ from triangulation_core.linear_algebra import list_equal
 # --------------------------------- Edge class --------------------------------
 
 
-class Edge():
+class Edge:
     """
     This class represents a single edge as defined in the Guibas and Stolfi
     edge algebra formalism.
@@ -25,7 +25,7 @@ class Edge():
     dest : int
         index of edge destination point
     sym : int
-        index of symetric edge
+        index of symmetric edge
     onext : int
         index of next ccw edge connected to the origin point
     oprev : int
@@ -65,7 +65,7 @@ class Edge():
         shift_edges : int
             integer to shift edge indices by
         shift_points : int
-            integer to shift orgin and destination points by
+            integer to shift origin and destination points by
         """
         self.index += shift_edges
         self.org += shift_points
@@ -102,7 +102,7 @@ class Edge():
 def setup_edge(origin, dest, edge_idx):
     """
     This function takes in the index of two points and creates an edge array,
-    as well as an edge for the symetric edge.
+    as well as an edge for the symmetric edge.
 
     Parameters
     ----------
@@ -128,10 +128,11 @@ def setup_edge(origin, dest, edge_idx):
 
     return edge, edge_sym
 
+
 # -------------------------------- Edges class --------------------------------
 
 
-class Edges():
+class Edges:
     def __init__(self):
         self.edges = []
         self.num_edges = 0
@@ -168,7 +169,7 @@ class Edges():
 
     def connect(self, edge1, edge2):
         """
-        This function takes two seperated edges and creates a new edge
+        This function takes two separated edges and creates a new edge
         connecting the two.
 
         Parameters
@@ -184,7 +185,8 @@ class Edges():
 
         current_index = self.num_edges
         edge, edge_sym = setup_edge(
-            self.edges[edge1].dest, self.edges[edge2].org, current_index)
+            self.edges[edge1].dest, self.edges[edge2].org, current_index
+        )
 
         self.push_back(edge)
         self.push_back(edge_sym)
@@ -211,15 +213,15 @@ class Edges():
         self.splice(e, self.edges[e].oprev)
         self.splice(self.edges[e].sym, self.edges[self.edges[e].sym].oprev)
 
-        # Set the status of the edge and it's symetric edge to kill
+        # Set the status of the edge and it's symmetric edge to kill
         self.edges[e].deactivate = True
         self.edges[self.edges[e].sym].deactivate = True
 
     def filter_deactivated(self):
-        self.edges = [e for e in self.edges if e.deactivate == False]
+        self.edges = [e for e in self.edges if not e.deactivate]
 
     def get_unique(self, num):
-        unique = [''] * num
+        unique = [""] * num
         points_seen = []
         for edge in self.edges:
             if edge.org not in points_seen:
@@ -227,6 +229,7 @@ class Edges():
                 points_seen.append(edge.org)
 
         return unique
+
 
 # ---------------------------- Triangulation class ----------------------------
 

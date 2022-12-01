@@ -1,9 +1,10 @@
 """
-This module containings the default settings for the triangulation
+This module containing the default settings for the triangulation
 run program.
 """
 
-class World():
+
+class World:
     """
     Define the range of possible values to generate points for.
     """
@@ -15,7 +16,9 @@ class World():
         self.y_max = world_size[3]
 
 
-world_options = {'min_x_val': 0,
-                 'max_x_val': 100,
-                 'min_y_val': 0,
-                 'max_y_val': 100}
+world_options = {
+    "min_x_val": 0,
+    "max_x_val": 100,
+    "min_y_val": 0,
+    "max_y_val": 100,
+}

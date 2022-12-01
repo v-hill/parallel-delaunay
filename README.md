@@ -6,37 +6,37 @@ An example Delaunay triangulation output for 32 points is shown below.
 
 **Why is this library special?**
 
-Speed! This is a pure python implemenation of the Guibas &amp; Stolfi's divide and conquer algorithm. The divide and conquer algorithm has been shown to be the [fastest](https://people.eecs.berkeley.edu/~jrs/meshpapers/SuDrysdale.pdf) DT generation technique, with O(*n* log *n*) running time. Furthermore, this code has been parallelised using the MPI for Python ([mpi4py](https://github.com/mpi4py/mpi4py)) library to utilise multiple CPU cores. This allows the algorithm to be efficiently scaled for distributed computing across supercomputer nodes.
+Speed! This is a pure python implementation of the Guibas &amp; Stolfi's divide and conquer algorithm. The divide and conquer algorithm has been shown to be the [fastest](https://people.eecs.berkeley.edu/~jrs/meshpapers/SuDrysdale.pdf) DT generation technique, with O(*n* log *n*) running time. Furthermore, this code has been parallelised using the MPI for Python ([mpi4py](https://github.com/mpi4py/mpi4py)) library to utilise multiple CPU cores. This allows the algorithm to be efficiently scaled for distributed computing across supercomputer nodes.
 
 ## Benchmarking
 
 ### Single core results
 
-As seen in the graph below, this Delaunay triangulation implemenation scales just as efficiently as the SciPy implemenation. The SciPy library is written in C and wrapped in Python for ease of use. As a result, the SciPy DT algorithm is consistently around 40x faster for a given number of points. However, the benefit of my library is that it can take advantage of multiple CPU cores, offering a performance advantage unavaialbe to SciPy users. By utilising the multiple cores available in modern computers, the run time can be reduced linearly by a factor approximatly equal to the number of available threads. 
+As seen in the graph below, this Delaunay triangulation implementation scales just as efficiently as the SciPy implementation. The SciPy library is written in C and wrapped in Python for ease of use. As a result, the SciPy DT algorithm is consistently around 40x faster for a given number of points. However, the benefit of my library is that it can take advantage of multiple CPU cores, offering a performance advantage unavailable to SciPy users. By utilising the multiple cores available in modern computers, the run time can be reduced linearly by a factor approximately equal to the number of available threads.
 
 <img src="./images/Figure 2021-07-02 210145.png" alt="drawing" width="700"/>
 
 ## Structure
 This repository is currently structured as follows.
 
-    ├── src      
+    ├── src
         ├── triangulation_core
-            ├── points_tools   
+            ├── points_tools
                 ├── generate_values.py
                 └── split_list.py
             ├── edge_topology.py
             ├── linear_algebra.py
             ├── triangulation.py
-            └── triangulation_primitives.py  
-        ├── utilities    
+            └── triangulation_primitives.py
+        ├── utilities
             └── settings.py
         ├── triangulation_benchmarks.py
         ├── triangulation_cli.py
         ├── triangulation_mpi_test.py
         └── triangulation_test.py
-        
+
 ## References
-<a id="1">[1]</a> 
+<a id="1">[1]</a>
 Guibas, Leonidas and Stolfi, Jorge
 'Primitives for the Manipulation of General Subdivisions and the Computation of Voronoi'
 In: ACM Trans. Graph.4.2  (Apr.1985),  pp.  74–123.

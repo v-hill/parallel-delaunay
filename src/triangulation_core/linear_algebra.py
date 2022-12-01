@@ -43,8 +43,9 @@ def normalise(vector, length=1):
     out : list
         Input list 'vec' normalsied to the value of 'length'.
     """
-    norm = sqrt(vector[0]**2 + vector[1]**2) / length
+    norm = sqrt(vector[0] ** 2 + vector[1] ** 2) / length
     return list_divide(vector, norm)
+
 
 # ----------------------------- Sorting functions -----------------------------
 
@@ -52,6 +53,7 @@ def normalise(vector, length=1):
 def lexigraphic_sort(points):
     points_sorted = sorted(points, key=lambda k: [k[0], k[1]])
     return points_sorted
+
 
 # ------------------------------- Linear algebra ------------------------------
 
@@ -90,9 +92,11 @@ def in_circle(a, b, c, d):
     v2 = c2**2 + u2**2
     v3 = c3**2 + u3**2
 
-    det = (c1 * ((u2 * v3) - (v2 * u3))) - \
-          (c2 * ((u1 * v3) - (v1 * u3))) + \
-          (c3 * ((u1 * v2) - (v1 * u2)))
+    det = (
+        (c1 * ((u2 * v3) - (v2 * u3)))
+        - (c2 * ((u1 * v3) - (v1 * u3)))
+        + (c3 * ((u1 * v2) - (v1 * u2)))
+    )
     return det < 0
 
 
@@ -114,8 +118,9 @@ def ccw_angle(p1, p2, p3):
     -------
     angle : float
     """
-    angle = (p1[0] - p3[0]) * (p2[1] - p3[1]) - \
-        (p1[1] - p3[1]) * (p2[0] - p3[0])
+    angle = (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p1[1] - p3[1]) * (
+        p2[0] - p3[0]
+    )
     return angle
 
 

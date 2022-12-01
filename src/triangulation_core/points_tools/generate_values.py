@@ -1,19 +1,21 @@
 """
-This module contains functions for generating co-ordinate values, which are
+This module contains functions for generating coordinate values, which are
 used to test the Delaunay triangulation algorithm.
 """
+
+from math import ceil, sqrt
 
 # Standard library imports
 import numpy as np
 from numpy.random import default_rng
-from math import sqrt, ceil
 
 # ----------------------------- Points generators -----------------------------
 
 """
-The following functions are used to generate the inital values for the
+The following functions are used to generate the initial values for the
 position of each point.
 """
+
 
 def random(num_points, span):
     """
@@ -66,8 +68,8 @@ def lattice(num_points, span):
     num_sqrt = ceil(sqrt(num_points))
     x_vals = np.linspace(span.x_min, span.x_max, num_sqrt)
     y_vals = np.linspace(span.y_min, span.y_max, num_sqrt)
-    _X, _Y = np.meshgrid(x_vals, y_vals)
-    pts = [list(i) for i in zip(_X.ravel().tolist(), _Y.ravel().tolist())]
+    _x, _y = np.meshgrid(x_vals, y_vals)
+    pts = [list(i) for i in zip(_x.ravel().tolist(), _y.ravel().tolist())]
 
     # If the number of points is not square, remove excess points randomly
     if not sqrt(num_points).is_integer():
