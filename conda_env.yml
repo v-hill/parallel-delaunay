@@ -1,0 +1,17 @@
+name: deltri
+channels:
+  - defaults
+  - pytorch
+  - conda-forge
+dependencies:
+  - black==22.6.0
+  - matplotlib==3.6.2
+  - mpi4py
+  - numpy==1.23.5
+  - pip==22.3.1
+  - python=3.10.9
+  - scipy==1.10.0
+  - tqdm==4.64.1
+  - pip:
+    - pre-commit==3.0.4
+    - requests==2.28.2
