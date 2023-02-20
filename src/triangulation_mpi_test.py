@@ -1,14 +1,18 @@
 """
 This script tests the full MPI Delaunay triangulation algorithm.
+
+Run this using the following command format:
+1) Change to the correct directory `cd src` if not in the src directory
+2) Run: `mpiexec -np 4 python triangulation_mpi_test.py`
 """
 
 from mpi4py import MPI
 
 import triangulation_core.points_tools.generate_values as generate_values
+import triangulation_core.points_tools.split_list as split_list
 from triangulation_core.linear_algebra import lexigraphic_sort
 from triangulation_core.triangulation import (
     make_primitives,
-    points_splitter_3,
     recursive_group_merge,
 )
 
@@ -28,7 +32,7 @@ if rank == 0:
 
     positions = generate_values.random(num_points, world)
     positions = lexigraphic_sort(positions)
-    split_pts = points_splitter_3(positions)
+    split_pts = split_list.groups_of_3(positions)
     pts_per_core = int(len(split_pts) / size) + 1
     data = [
         split_pts[i : i + pts_per_core]
@@ -60,6 +64,3 @@ if rank == 0:
     wt_end = MPI.Wtime()
     elapsed = wt_end - wt_start
     print(f"Total elapsed time: {elapsed*1000:0.3f} ms")
-
-# Run using the following command format
-# mpiexec -np 4 python .\triangulation_mpi_test.py

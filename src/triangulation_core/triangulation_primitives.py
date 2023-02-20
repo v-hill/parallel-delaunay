@@ -119,4 +119,6 @@ def make_primitives(split_pts):
         elif len(pts_subset) == 3:
             # 3 points define a single triangle
             primitives.append(triangle_primitive(pts_subset))
+        elif len(pts_subset) == 0:
+            raise Exception("Unexpected number of points in pts_subset")
     return primitives
