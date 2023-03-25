@@ -1,13 +1,8 @@
-"""
-This module containing the default settings for the triangulation
-run program.
-"""
+"""Default settings for the triangulation run program."""
 
 
 class World:
-    """
-    Define the range of possible values to generate points for.
-    """
+    """Define the range of possible values to generate points for."""
 
     def __init__(self, world_size):
         self.x_min = world_size[0]

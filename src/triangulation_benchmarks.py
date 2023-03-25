@@ -1,19 +1,14 @@
-"""
-This script is a test of the full Delaunay triangulation algorithm.
-"""
+"""Test of the full Delaunay triangulation algorithm."""
 
 import time
 
-# Standard library imports
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial import Delaunay
 
 import triangulation_core.points_tools.generate_values as generate_values
-from triangulation_core.linear_algebra import lexigraphic_sort
+from triangulation_core.linear_algebra import lexicographic_sort
 from triangulation_core.triangulation import triangulate
-
-# Repo module imports
 from utilities.settings import World
 
 # -----------------------------------------------------------------------------
@@ -32,7 +27,7 @@ for num in num_points:
     positions = generate_values.random(num, world)
 
     start = time.time()
-    positions = lexigraphic_sort(positions)
+    positions = lexicographic_sort(positions)
     triangulation = triangulate(positions)
     elapsed1 = time.time() - start
     y1.append(elapsed1)

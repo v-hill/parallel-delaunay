@@ -1,24 +1,28 @@
-"""
-Command line interface for Delaunay triangulation program.
-"""
+"""Command line interface for Delaunay triangulation program."""
 
-# ---------------------------------- Imports ----------------------------------
 
-# Standard library imports
 import argparse
 import time
 
 import triangulation_core.points_tools.generate_values as generate_values
-
-# Repo module imports
-from triangulation_core.linear_algebra import lexigraphic_sort
+from triangulation_core.linear_algebra import lexicographic_sort
 from triangulation_core.triangulation import triangulate
 from utilities.settings import World, world_options
 
-# -----------------------------------------------------------------------------
-
 
 def set_options(world_options):
+    """Set up run parameters for the triangulation script.
+
+    Parameters
+    ----------
+    world_options : dict
+        A dictionary of options for the script's world parameters.
+
+    Returns
+    -------
+    dict
+        A dictionary of options for the script's run parameters.
+    """
     points_options = {}
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
@@ -30,7 +34,7 @@ def set_options(world_options):
     points.add_argument(
         "number_of_points",
         type=int,
-        help=("Number of points to generate \n" "(type: %(type)s)"),
+        help="Number of points to generate \n(type: %(type)s)",
     )
     points.add_argument(
         "--points_distribution",
@@ -96,9 +100,16 @@ def set_options(world_options):
 
 
 def main(options):
+    """Run triangulation CLI.
+
+    Parameters
+    ----------
+    options : dict
+        Dictionary of run parameters.
+    """
     # Setup world
-    WORLD_SIZE = [0, options["max_x_val"], 0, options["max_y_val"]]
-    world = World(WORLD_SIZE)
+    world_size = [0, options["max_x_val"], 0, options["max_y_val"]]
+    world = World(world_size)
 
     num_points = options["number_of_points"]
 
@@ -110,7 +121,7 @@ def main(options):
     positions = generate_values.random(num_points, world)
 
     start = time.time()
-    positions = lexigraphic_sort(positions)
+    positions = lexicographic_sort(positions)
     triangulation = triangulate(positions)
     elapsed = time.time() - start
     print(f"{num_points} points in {elapsed*1000:0.3f} ms")

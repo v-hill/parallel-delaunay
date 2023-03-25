@@ -1,4 +1,5 @@
-"""
+"""Main implementation of the  Guibas and Stolfi divide-and-conquer algorithm.
+
 The following code implements the Guibas and Stolfi divide-and-conquer
 algorithm as presented in:
     L. J. Guibas, J. Stolfi, "Primitives for the manipulation of general
@@ -6,11 +7,8 @@ algorithm as presented in:
 This algorithm computes the Delaunay triangulation of a set of input points.
 """
 
-# ---------------------------------- Imports ----------------------------------
 
 import triangulation_core.linear_algebra as linalg
-
-# Repo module imports
 import triangulation_core.points_tools.split_list as split_list
 from triangulation_core.triangulation_primitives import make_primitives
 
@@ -18,7 +16,8 @@ from triangulation_core.triangulation_primitives import make_primitives
 
 
 def lowest_common_tangent(h_left, h_right):
-    """
+    """Find lowest y-value tangential edge connecting two triangulations.
+
     Given two fully triangulated sets of points, this function finds an
     edge connecting the two triangulations. Each triangulation forms a convex
     hull of edges. The edge to be found by this function is the edge with the
@@ -69,7 +68,8 @@ def lowest_common_tangent(h_left, h_right):
 
 
 def rcand_func(rhull, rcand, b1, b2):
-    """
+    """Search right hull for candidate edge.
+
     This function finds the candidate edge from the right hull triangulation.
     An initial candidate 'rcand' is given. This candidate is tested. If the
     candidate fails it is deleted from the triangulation and the next
@@ -112,10 +112,7 @@ def rcand_func(rhull, rcand, b1, b2):
 
 
 def lcand_func(lhull, lcand, b1, b2):
-    """
-    This function performs the same task as the above 'rcand_func' but testing
-    for the left candidate edge.
-    """
+    """Test for the left candidate edge, similar to rcand_func."""
     completed = False
     while not completed:
         lcand_oprev_dest = lhull.edges[lhull.edges[lcand].oprev].dest
@@ -134,7 +131,8 @@ def lcand_func(lhull, lcand, b1, b2):
 
 
 def candidate_decider(rcand, lcand, lcand_valid, triangulation):
-    """
+    """Choose correct edge for triangulation.
+
     Given two potential edges which could be added to the triangulation,
     decide which of the edges is the correct one to add.
 
@@ -166,9 +164,7 @@ def candidate_decider(rcand, lcand, lcand_valid, triangulation):
 
 
 def combine_triangulations(ldi, rdi, hull_left, hull_right):
-    """
-    This function takes two TriangulationEdges class objects and combines
-    them into a single TriangulationEdges object.
+    """Merge two TriangulationEdges objects into one.
 
     Parameters
     ----------
@@ -213,7 +209,8 @@ def combine_triangulations(ldi, rdi, hull_left, hull_right):
 
 
 def zip_hulls(base, triang):
-    """
+    """Zip together two separate hulls' triangulations.
+
     Given a triangulation containing two separate hulls and the base edge
     connecting the hulls, triangulate the space between the hulls. This is
     referred to as 'zipping' the hulls together.
@@ -269,7 +266,8 @@ def zip_hulls(base, triang):
 
 
 def merge_triangulations(groups):
-    """
+    """Combine pairs of triangulations.
+
     Each entry of the groups list is a list of two (or one) triangulations.
     This function takes each pair of triangulations and combines them.
 
@@ -305,9 +303,10 @@ def merge_triangulations(groups):
 
 
 def recursive_group_merge(groups):
-    """
-    Recursively call the merge_triangulations() function, until all points have
-    been triangulated.
+    """Call merge_triangulations() recursively for triangulation.
+
+    Recursively merge triangulations in `groups` until all points have been
+    triangulated.
 
     Parameters
     ----------
@@ -328,7 +327,8 @@ def recursive_group_merge(groups):
 
 
 def triangulate(pts_subset):
-    """
+    """Perform triangulation in four steps for a list of input points.
+
     This function encapsulates the whole triangulation algorithm into four
     steps. The function takes as input a list of points. Each point is of the
     form [x, y], where x and y are the coordinates of the point.

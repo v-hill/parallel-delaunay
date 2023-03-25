@@ -1,11 +1,10 @@
-"""
-This module contains functions for generating coordinate values, which are
-used to test the Delaunay triangulation algorithm.
+"""Functions for generating coordinate values.
+
+The coordinate values are used to test the Delaunay triangulation algorithm.
 """
 
 from math import ceil, sqrt
 
-# Standard library imports
 import numpy as np
 from numpy.random import default_rng
 
@@ -18,7 +17,8 @@ position of each point.
 
 
 def random(num_points, span):
-    """
+    """Generate random x, y coordinates with NumPy.
+
     This function generates a set of random x and y coordinates using the
     numpy uniform random number generator 'numpy.random.default_rng().uniform'.
 
@@ -45,7 +45,8 @@ def random(num_points, span):
 
 
 def lattice(num_points, span):
-    """
+    """Generate evenly spaced points on grid.
+
     This function generates a set of points which are set on a grid. The points
     are spaced equally in x and y using the numpy.linspace function. To have
     a point at every place on the grid requires that the number of points is a

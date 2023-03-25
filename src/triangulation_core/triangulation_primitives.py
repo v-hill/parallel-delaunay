@@ -1,11 +1,10 @@
-"""
+"""Functions for creating triangulations.
+
 This module contains functions for creating triangulations from 2 and 3 points,
 respectively known as the line-primitive and the triangle-primitive.
 """
 
-# ---------------------------------- Imports ----------------------------------
 
-# Repo module imports
 import triangulation_core.edge_topology as edge_topology
 import triangulation_core.linear_algebra as linalg
 
@@ -13,7 +12,8 @@ import triangulation_core.linear_algebra as linalg
 
 
 def line_primitive(pts_subset):
-    """
+    """Construct edge and its symmetric, add to TriangulationEdges object.
+
     This function takes in a list of two points and forms an edge.
     The symmetric edge, where the origin and destination points are reversed,
     is also constructed. These two edge are added into a new TriangulationEdges
@@ -49,7 +49,8 @@ def line_primitive(pts_subset):
 
 
 def triangle_primitive(pts_subset):
-    """
+    """Create a triangle from 3 points with CCW orientation.
+
     This function takes a list of three points and forms three edges to
     create a single triangle. This triangle has the property that the origin
     of one edge is connected to the destination of the next edge in a CCW
@@ -109,13 +110,29 @@ def triangle_primitive(pts_subset):
 
 
 def make_primitives(split_pts):
+    """Create a list of geometric primitives from a list of sets of points.
+
+    Parameters
+    ----------
+    split_pts : list of list of tuple
+        List of sets of x-y coordinates for points.
+
+    Returns
+    -------
+    list of Primitive
+        List of geometric primitives. Each primitive is either a LinePrimitive
+        or a TrianglePrimitive object.
+
+    Raises
+    ------
+    Exception
+        If a set of points contains no points.
+    """
     primitives = []
     for pts_subset in split_pts:
-
         if len(pts_subset) == 2:
             # 2 points define a single edge
             primitives.append(line_primitive(pts_subset))
-
         elif len(pts_subset) == 3:
             # 3 points define a single triangle
             primitives.append(triangle_primitive(pts_subset))

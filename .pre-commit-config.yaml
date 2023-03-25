@@ -16,12 +16,6 @@ repos:
       - id: isort
         args: ["--profile", "black", "--filter-files"]
 
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v2.31.0
-    hooks:
-      - id: pyupgrade
-        args: [--py3-plus, --py38-plus]
-
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.2
     hooks:
@@ -39,10 +33,12 @@ repos:
       - id: flake8
         args:
           - --max-line-length=79
-          - --ignore=E203,VNE001,W503,E402,E722,D101,D102,D103,D105
-          - --max-function-length=60
+          - --ignore=E203,VNE001,W503,CFQ002
+          - --docstring-convention=numpy
+          - --max-function-length=36
         additional_dependencies:
           - flake8-assert-msg==1.1.1
-          - flake8-comprehensions==1.4.1
-          - flake8-functions==0.0.2
-          - pep8-naming==0.12.1
+          - flake8-comprehensions==3.11.1
+          - flake8-docstrings==1.7.0
+          - flake8-functions==0.0.7
+          - pep8-naming

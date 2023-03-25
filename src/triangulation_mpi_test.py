@@ -1,5 +1,4 @@
-"""
-This script tests the full MPI Delaunay triangulation algorithm.
+"""Script that tests the full MPI Delaunay triangulation algorithm.
 
 Run this using the following command format:
 1) Change to the correct directory `cd src` if not in the src directory
@@ -10,13 +9,11 @@ from mpi4py import MPI
 
 import triangulation_core.points_tools.generate_values as generate_values
 import triangulation_core.points_tools.split_list as split_list
-from triangulation_core.linear_algebra import lexigraphic_sort
+from triangulation_core.linear_algebra import lexicographic_sort
 from triangulation_core.triangulation import (
     make_primitives,
     recursive_group_merge,
 )
-
-# Code from local files
 from utilities.settings import World
 
 num_points = 10000
@@ -31,7 +28,7 @@ if rank == 0:
     world = World(world_size)
 
     positions = generate_values.random(num_points, world)
-    positions = lexigraphic_sort(positions)
+    positions = lexicographic_sort(positions)
     split_pts = split_list.groups_of_3(positions)
     pts_per_core = int(len(split_pts) / size) + 1
     data = [
