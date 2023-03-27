@@ -5,10 +5,9 @@ Run this using the following command format:
 2) Run: `mpiexec -np 4 python triangulation_mpi_test.py`
 """
 
-from mpi4py import MPI
-
 import triangulation_core.points_tools.generate_values as generate_values
 import triangulation_core.points_tools.split_list as split_list
+from mpi4py import MPI
 from triangulation_core.linear_algebra import lexicographic_sort
 from triangulation_core.triangulation import (
     make_primitives,

@@ -4,9 +4,8 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.spatial import Delaunay
-
 import triangulation_core.points_tools.generate_values as generate_values
+from scipy.spatial import Delaunay
 from triangulation_core.linear_algebra import lexicographic_sort
 from triangulation_core.triangulation import triangulate
 from utilities.settings import World
