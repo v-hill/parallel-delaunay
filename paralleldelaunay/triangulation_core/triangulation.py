@@ -7,10 +7,11 @@ algorithm as presented in:
 This algorithm computes the Delaunay triangulation of a set of input points.
 """
 
-
-import triangulation_core.linear_algebra as linalg
-import triangulation_core.points_tools.split_list as split_list
-from triangulation_core.triangulation_primitives import make_primitives
+import paralleldelaunay.triangulation_core.linear_algebra as linalg
+import paralleldelaunay.triangulation_core.points_tools.split_list as split_list
+from paralleldelaunay.triangulation_core.triangulation_primitives import (
+    make_primitives,
+)
 
 # --------------------------- Edge finding functions --------------------------
 

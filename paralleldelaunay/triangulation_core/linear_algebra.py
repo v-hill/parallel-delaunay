@@ -2,6 +2,7 @@
 
 
 from math import sqrt
+from typing import Union
 
 # ------------------------------ Vector algebra -------------------------------
 
@@ -130,8 +131,8 @@ def normalise(vector, length=1):
 
 
 def lexicographic_sort(
-    points: list[list[int | float]],
-) -> list[list[int | float]]:
+    points: list[list[Union[int, float]]],
+) -> list[list[Union[int, float]]]:
     """Sort a list of 2D points in lexicographic order.
 
     Parameters

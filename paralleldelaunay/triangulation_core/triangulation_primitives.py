@@ -5,8 +5,8 @@ respectively known as the line-primitive and the triangle-primitive.
 """
 
 
-import triangulation_core.edge_topology as edge_topology
-import triangulation_core.linear_algebra as linalg
+import paralleldelaunay.triangulation_core.edge_topology as edge_topology
+import paralleldelaunay.triangulation_core.linear_algebra as linalg
 
 # -------------------------------- Definitions --------------------------------
 

@@ -4,17 +4,16 @@ This library is used for computing the [Delaunay triangulation](https://en.wikip
 An example Delaunay triangulation output for 32 points is shown below.
 <img src="./images/Figure 2021-02-24 110617.png" alt="drawing" width="500"/>
 
+
 **Why is this library special?**
 
 Speed! This is a pure python implementation of the Guibas &amp; Stolfi's divide and conquer algorithm. The divide and conquer algorithm has been shown to be the [fastest](https://people.eecs.berkeley.edu/~jrs/meshpapers/SuDrysdale.pdf) DT generation technique, with O(*n* log *n*) running time. Furthermore, this code has been parallelised using the MPI for Python ([mpi4py](https://github.com/mpi4py/mpi4py)) library to utilise multiple CPU cores. This allows the algorithm to be efficiently scaled for distributed computing across supercomputer nodes.
 
-# Setup
-1. Install anaconda or miniconda
-2. Install git, then clone repository: `git clone https://github.com/v-hill/delaunay-triangulation`
-3. Create environment: `conda create -n deltri python=3.9`
-4. Activate environment: `conda activate deltri`
-5. Install dependencies: `conda env update -f conda_env.yml --prune`
-6. Run test: `python src/triangulation_test.py`
+# Installation
+
+Parallel Delaunay can be installed by running `pip install parallel-delaunay`. It requires Python 3.8+ to run.
+
+To import and use the library see scipi_comparison.py for an example of generating a random set of 2D points and running the delaunay triangulation algorithm.
 
 # Benchmarking
 
@@ -40,10 +39,6 @@ This repository is currently structured as follows.
             └── triangulation_primitives.py
         ├── utilities
             └── settings.py
-        ├── triangulation_benchmarks.py
-        ├── triangulation_cli.py
-        ├── triangulation_mpi_test.py
-        └── triangulation_test.py
 
 ## References
 <a id="1">[1]</a>

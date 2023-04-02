@@ -1,19 +1,21 @@
 """Script that tests the full MPI Delaunay triangulation algorithm.
 
 Run this using the following command format:
-1) Change to the correct directory `cd src` if not in the src directory
-2) Run: `mpiexec -np 4 python triangulation_mpi_test.py`
+    `mpiexec -np 4 python triangulation_mpi_test.py`
 """
 
-import triangulation_core.points_tools.generate_values as generate_values
-import triangulation_core.points_tools.split_list as split_list
 from mpi4py import MPI
-from triangulation_core.linear_algebra import lexicographic_sort
-from triangulation_core.triangulation import (
+
+import paralleldelaunay.triangulation_core.points_tools.generate_values as generate_values
+import paralleldelaunay.triangulation_core.points_tools.split_list as split_list
+from paralleldelaunay.triangulation_core.linear_algebra import (
+    lexicographic_sort,
+)
+from paralleldelaunay.triangulation_core.triangulation import (
     make_primitives,
     recursive_group_merge,
 )
-from utilities.settings import World
+from paralleldelaunay.utilities.settings import World
 
 num_points = 10000
 

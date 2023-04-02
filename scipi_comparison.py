@@ -2,11 +2,14 @@
 
 import time
 
-import triangulation_core.points_tools.generate_values as generate_values
 from scipy.spatial import Delaunay
-from triangulation_core.linear_algebra import lexicographic_sort
-from triangulation_core.triangulation import triangulate
-from utilities.settings import World
+
+import paralleldelaunay.triangulation_core.points_tools.generate_values as generate_values
+from paralleldelaunay.triangulation_core.linear_algebra import (
+    lexicographic_sort,
+)
+from paralleldelaunay.triangulation_core.triangulation import triangulate
+from paralleldelaunay.utilities.settings import World
 
 # -----------------------------------------------------------------------------
 
@@ -14,7 +17,7 @@ start = time.time()
 world_size = [0, 1000, 0, 1000]
 world = World(world_size)
 
-num_points = 10000
+num_points = 1000
 positions = generate_values.random(num_points, world)
 
 start = time.time()

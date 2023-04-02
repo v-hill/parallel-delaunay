@@ -1,7 +1,7 @@
 """Implementation of the quad-edge data structure used by Gubias and Stolfi."""
 
 
-from triangulation_core.linear_algebra import list_equal
+from paralleldelaunay.triangulation_core.linear_algebra import list_equal
 
 # --------------------------------- Edge class --------------------------------
 

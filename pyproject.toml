@@ -1,17 +1,14 @@
 [tool.poetry]
 name = "parallel-delaunay"
-version = "0.1.0"
+version = "1.0.0"
 description = "Parallel implementation of Guibas & Stolfi's divide-and-conquer algorithm for Delaunay triangulation, using MPI in Python."
 authors = ["v-hill <67915924+v-hill@users.noreply.github.com>"]
 license = "MIT"
 readme = "README.md"
 packages = [
-    { include = "parallel-delaunay" }
+    { include = "paralleldelaunay" }
 ]
-
-[tool.poetry.publishing]
 repository = "https://github.com/v-hill/parallel-delaunay"
-keywords = ["mpi", "parallel-computing", "delaunay-triangulation"]
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
@@ -27,3 +24,6 @@ pre-commit = "*"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.setuptools]
+name = "paralleldelaunay" # set the package name for importing

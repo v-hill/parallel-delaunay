@@ -4,10 +4,10 @@ The coordinate values are used to test the Delaunay triangulation algorithm.
 """
 
 from math import ceil, sqrt
+from typing import Union
 
 import numpy as np
 from numpy.random import default_rng
-from utilities.settings import World
 
 # ----------------------------- Points generators -----------------------------
 
@@ -17,7 +17,7 @@ position of each point.
 """
 
 
-def random(num_points: int, span: World) -> list[list[int | float]]:
+def random(num_points: int, span) -> list[list[Union[int, float]]]:
     """Generate random x, y coordinates with NumPy.
 
     This function generates a set of random x and y coordinates using the
