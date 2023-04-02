@@ -34,10 +34,10 @@ def lowest_common_tangent(h_left, h_right):
     -------
     left_e : int
         The index of the edge in the right hull which forms one end of the
-        base edge
+        base edge.
     right_e : int
         The index of the edge in the left hull which forms the other end of
-        the base edge
+        the base edge.
     """
     left_e = h_left.outer
     right_e = h_right.inner
@@ -79,7 +79,7 @@ def rcand_func(rhull, rcand, b1, b2):
     Parameters
     ----------
     rhull : TriangulationEdges
-        The triangulation of edges on the right hand side
+        The triangulation of edges on the right hand side.
     rcand : TYPE
         DESCRIPTION.
     b1 : list
@@ -139,9 +139,9 @@ def candidate_decider(rcand, lcand, lcand_valid, triangulation):
     Parameters
     ----------
     rcand : int
-        index of right candidate edge
+        Index of right candidate edge.
     lcand : int
-        index of left candidate edge
+        Index of left candidate edge.
     lcand_valid : TYPE
         DESCRIPTION.
     triangulation : TriangulationEdges
@@ -218,9 +218,9 @@ def zip_hulls(base, triang):
     Parameters
     ----------
     base : int
-        index of base edge
+        Index of base edge.
     triang : TriangulationEdges
-        Incomplete triangulation, with known base edge
+        Incomplete triangulation, with known base edge.
 
     Returns
     -------
@@ -274,12 +274,12 @@ def merge_triangulations(groups):
     Parameters
     ----------
     groups : list
-        List of pairs of triangulations
+        List of pairs of triangulations.
 
     Returns
     -------
     list
-        List of merged triangulations
+        List of merged triangulations.
     """
     triangulations = []
     for group in groups:
@@ -305,18 +305,18 @@ def merge_triangulations(groups):
 def recursive_group_merge(groups):
     """Call merge_triangulations() recursively for triangulation.
 
-    Recursively merge triangulations in `groups` until all points have been
+    Recursively merge triangulations in 'groups' until all points have been
     triangulated.
 
     Parameters
     ----------
     groups : list
-        List of pairs of triangulations
+        List of pairs of triangulations.
 
     Returns
     -------
     list
-        List containing the single completed Delauney triangulation
+        List containing the single completed Delauney triangulation.
     """
     while len(groups[0]) != 1:
         groups = merge_triangulations(groups)
@@ -358,6 +358,7 @@ def triangulate(pts_subset):
     """
     split_pts = split_list.groups_of_3(pts_subset)
     primitives = make_primitives(split_pts)
+    # group the primitives into pairs of adjacent primitives
     groups = [primitives[i : i + 2] for i in range(0, len(primitives), 2)]
     groups = recursive_group_merge(groups)
     return groups[0][0]

@@ -19,7 +19,7 @@ class Edge:
     Attributes
     ----------
     index : int
-        Unique edge index
+        Unique edge index.
     org : int
         Index of edge origin point..
     dest : int
@@ -219,7 +219,7 @@ class Edges:
         Returns
         -------
         out : int
-            index of the created edge
+            Index of the created edge.
         """
         current_index = self.num_edges
         edge, edge_sym = setup_edge(
@@ -242,7 +242,7 @@ class Edges:
         Parameters
         ----------
         e : Edge class
-            edge to remove from the triangulation
+            Edge to remove from the triangulation.
         """
         # Fix the local triangulation
         self.splice(e, self.edges[e].oprev)
@@ -356,7 +356,7 @@ class TriangulationEdges(Edges):
         Returns
         -------
         TriangulationEdges
-            The `TriangulationEdges` object resulting from the combination of
+            The 'TriangulationEdges' object resulting from the combination of
             the two triangulations.
         """
         self.merge_hulls(triangulation)

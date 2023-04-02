@@ -22,18 +22,18 @@ def line_primitive(pts_subset):
     Parameters
     ----------
     pts_index : list
-        List of the indices of the two points
+        List of the indices of the two points.
     pts_subset : lists of lists
-        A set of two points with the form [ [x1, y1], [x2, y2] ]
+        A set of two points with the form [ [x1, y1], [x2, y2] ].
 
     Returns
     -------
     left_most_edge : int
-        Index of edge with the left most point
+        Index of edge with the left most point.
     right_most_edge : int
-       Index of the edge with the right most point
+       Index of the edge with the right most point.
     line : TriangulationEdges
-        The resulting triangulation of two points
+        The resulting triangulation of two points.
     """
     p1, p2 = 0, 1
     edge, edge_sym = edge_topology.setup_edge(p1, p2, 0)
@@ -59,18 +59,18 @@ def triangle_primitive(pts_subset):
     Parameters
     ----------
     pts_index : list
-        List of the indices of the three points
+        List of the indices of the three points.
     pts_subset : lists of lists
-        A set of three points with the form [ [x1, y1], [x2, y2] , [x3, y3] ]
+        A set of three points with the form [ [x1, y1], [x2, y2] , [x3, y3] ].
 
     Returns
     -------
     out1 : int
-        Index of edge with the left most point
+        Index of edge with the left most point.
     ou2 : int
-       Index of the edge with the right most point
+       Index of the edge with the right most point.
     edges : TriangulationEdges
-        The resulting triangulation of three points
+        The resulting triangulation of three points.
     """
     p1, p2, p3 = 0, 1, 2
     triang = edge_topology.TriangulationEdges(pts_subset)

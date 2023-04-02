@@ -7,6 +7,7 @@ from math import ceil, sqrt
 
 import numpy as np
 from numpy.random import default_rng
+from utilities.settings import World
 
 # ----------------------------- Points generators -----------------------------
 
@@ -16,7 +17,7 @@ position of each point.
 """
 
 
-def random(num_points, span):
+def random(num_points: int, span: World) -> list[list[int | float]]:
     """Generate random x, y coordinates with NumPy.
 
     This function generates a set of random x and y coordinates using the
@@ -31,16 +32,13 @@ def random(num_points, span):
 
     Returns
     -------
-    pts : list
+    pts : list[list[int | float]]
         A list of length num_points, where each element is a point
         e.g. [ [x1, y1], [x2, y2], ... [xn, yn] ]
     """
     x_vals = default_rng().uniform(span.x_min, span.x_max, num_points)
     y_vals = default_rng().uniform(span.y_min, span.y_max, num_points)
     pts = [list(i) for i in zip(x_vals.tolist(), y_vals.tolist())]
-
-    # Alternative version to return numpy array
-    # pts = np.concatenate((x_vals, y_vals)).reshape(-1, 2)
     return pts
 
 

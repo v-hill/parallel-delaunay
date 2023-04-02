@@ -129,18 +129,20 @@ def normalise(vector, length=1):
 # ----------------------------- Sorting functions -----------------------------
 
 
-def lexicographic_sort(points):
+def lexicographic_sort(
+    points: list[list[int | float]],
+) -> list[list[int | float]]:
     """Sort a list of 2D points in lexicographic order.
 
     Parameters
     ----------
-    points : list of points
+    points : list[list[int | float]]
         A list of 2D points, where each point is represented as a tuple of two
         floating-point numbers.
 
     Returns
     -------
-    list of points
+    list[list[int | float]]
         Points in lexicographic order.
     """
     points_sorted = sorted(points, key=lambda k: [k[0], k[1]])
@@ -164,14 +166,14 @@ def in_circle(a, b, c, d):
     Parameters
     ----------
     a, b, c : list
-        The three points that define the circle
+        The three points that define the circle.
     d : list
-        Testing if this point is in the circle
+        Testing if this point is in the circle.
 
     Returns
     -------
     out : Bool
-        True if the point 'd' is within the circle defined by 'a', 'b', 'c'
+        True if the point 'd' is within the circle defined by 'a', 'b', 'c'.
     """
     c1 = a[0] - d[0]
     c2 = b[0] - d[0]
