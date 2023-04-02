@@ -9,6 +9,10 @@ packages = [
     { include = "parallel-delaunay" }
 ]
 
+[tool.poetry.publishing]
+repository = "https://github.com/v-hill/parallel-delaunay"
+keywords = ["mpi", "parallel-computing", "delaunay-triangulation"]
+
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
 matplotlib = "^3.6.2"
