@@ -2,7 +2,7 @@
 
 [Delaunay triangulation](https://en.wikipedia.org/wiki/Delaunay_triangulation) for a 2D point set. On the benchmark below this is about twice as fast as SciPy 1.18.1. Both curves have the same slope: O(*n* log *n*).
 
-<img src="./images/Figure 2021-02-24 110617.png" alt="Delaunay triangulation of 32 points" width="500"/>
+<img src="https://raw.githubusercontent.com/v-hill/parallel-delaunay/v2.0.0/images/Figure%202021-02-24%20110617.png" alt="Delaunay triangulation of 32 points" width="500"/>
 
 The kernel is [Guibas and Stolfi's](https://doi.org/10.1145/282918.282923) divide-and-conquer algorithm, compiled with Numba. An edge is an index into integer arrays, not an object: `org[e]` is the origin, `onext[e]` is the next edge counterclockwise around that origin, and the symmetric edge is `e ^ 1` because each undirected edge occupies slots `2k` and `2k+1`. `triangulate` runs every leaf at once, then each round of independent merges, using `prange`. `parallel=False` runs the same kernel on one core.
 
@@ -31,7 +31,7 @@ uv run python triangulation_benchmarks.py
 
 Each time below is the median of five runs against `scipy.spatial.Delaunay`. This library's column includes sorting the points. A ratio below 1 means this library was faster. `parallel_benchmark.py` compares the default `prange` path with `parallel=False`. The 2021 pure-Python chart is `images/Figure 2021-07-02 210145.png`.
 
-<img src="./images/Figure 2026-11-22 benchmark.png" alt="Delaunay triangulation benchmarks" width="700"/>
+<img src="https://raw.githubusercontent.com/v-hill/parallel-delaunay/v2.0.0/images/Figure%202026-11-22%20benchmark.png" alt="Delaunay triangulation benchmarks" width="700"/>
 
 | Points | This library | SciPy 1.18.1 | This library / SciPy |
 | ---: | ---: | ---: | ---: |
