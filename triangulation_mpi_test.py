@@ -1,7 +1,7 @@
 """Script that tests the full MPI Delaunay triangulation algorithm.
 
 Run this using the following command format:
-    `mpiexec -np 4 python triangulation_mpi_test.py`
+    `uv run mpiexec -np 4 python triangulation_mpi_test.py`
 """
 
 from mpi4py import MPI

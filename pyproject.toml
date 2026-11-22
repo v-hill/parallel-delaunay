@@ -1,29 +1,42 @@
-[tool.poetry]
+[project]
 name = "parallel-delaunay"
 version = "1.0.0"
 description = "Parallel implementation of Guibas & Stolfi's divide-and-conquer algorithm for Delaunay triangulation, using MPI in Python."
-authors = ["v-hill <67915924+v-hill@users.noreply.github.com>"]
-license = "MIT"
 readme = "README.md"
-packages = [
-    { include = "paralleldelaunay" }
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "v-hill", email = "67915924+v-hill@users.noreply.github.com" },
 ]
-repository = "https://github.com/v-hill/parallel-delaunay"
+requires-python = ">=3.11"
+dependencies = [
+    "matplotlib>=3.6.2",
+    "mpi4py>=3.1.4",
+    "numpy>=1.23.5",
+    "scipy>=1.10.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.8,<3.12"
-matplotlib = "^3.6.2"
-mpi4py = "^3.1.4"
-numpy = "^1.23.5"
-scipy = "^1.10.0"
+[project.urls]
+Repository = "https://github.com/v-hill/parallel-delaunay"
 
-[tool.poetry.group.dev.dependencies]
-black = "*"
-pre-commit = "*"
+[dependency-groups]
+dev = [
+    "black",
+    "pre-commit",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.9.27,<0.10.0"]
+build-backend = "uv_build"
 
-[tool.setuptools]
-name = "paralleldelaunay" # set the package name for importing
+[tool.uv.build-backend]
+module-name = "paralleldelaunay"
+module-root = ""
+
+[tool.black]
+line-length = 79
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 79

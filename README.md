@@ -1,4 +1,4 @@
-# delaunay-triangulation
+# parallel-delaunay
 This library is used for computing the [Delaunay triangulation](https://en.wikipedia.org/wiki/Delaunay_triangulation) of 2D point sets.
 
 An example Delaunay triangulation output for 32 points is shown below.
@@ -11,9 +11,21 @@ Speed! This is a pure python implementation of the Guibas &amp; Stolfi's divide 
 
 # Installation
 
-Parallel Delaunay can be installed by running `pip install parallel-delaunay`. It requires Python 3.8+ to run.
+This repository uses [uv](https://docs.astral.sh/uv/) for Python and dependency management. Python 3.11 or newer is required.
 
-To import and use the library see scipi_comparison.py for an example of generating a random set of 2D points and running the delaunay triangulation algorithm.
+Install the library and development tools from the repository root:
+
+```bash
+uv sync
+```
+
+Add the published package to another uv project with `uv add parallel-delaunay`.
+
+`scipi_comparison.py` generates a random set of 2D points and runs the triangulation:
+
+```bash
+uv run python scipi_comparison.py
+```
 
 # Benchmarking
 
@@ -23,22 +35,28 @@ As seen in the graph below, this Delaunay triangulation implementation scales ju
 
 <img src="./images/Figure 2021-07-02 210145.png" alt="drawing" width="700"/>
 
-This graph can be reproduced by running `python src/triangulation_benchmarks.py`.
+This graph can be reproduced by running `uv run python triangulation_benchmarks.py`.
+
+The MPI path can be checked with `uv run mpiexec -np 4 python triangulation_mpi_test.py`.
 
 ## Structure
 This repository is currently structured as follows.
 
-    ├── src
-        ├── triangulation_core
-            ├── points_tools
-                ├── generate_values.py
-                └── split_list.py
-            ├── edge_topology.py
-            ├── linear_algebra.py
-            ├── triangulation.py
-            └── triangulation_primitives.py
-        ├── utilities
-            └── settings.py
+    ├── paralleldelaunay
+    │   ├── triangulation_core
+    │   │   ├── points_tools
+    │   │   │   ├── generate_values.py
+    │   │   │   └── split_list.py
+    │   │   ├── edge_topology.py
+    │   │   ├── linear_algebra.py
+    │   │   ├── triangulation.py
+    │   │   └── triangulation_primitives.py
+    │   └── utilities
+    │       └── settings.py
+    ├── scipi_comparison.py
+    ├── triangulation_benchmarks.py
+    ├── triangulation_mpi_test.py
+    └── pyproject.toml
 
 ## References
 <a id="1">[1]</a>
