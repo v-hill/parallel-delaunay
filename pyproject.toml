@@ -1,6 +1,6 @@
 [project]
 name = "parallel-delaunay"
-version = "1.0.0"
+version = "2.0.0"
 description = "Numba implementation of Guibas & Stolfi's divide-and-conquer algorithm for Delaunay triangulation."
 readme = "README.md"
 license = "MIT"
