@@ -1,365 +1,498 @@
-"""Main implementation of the  Guibas and Stolfi divide-and-conquer algorithm.
+"""Guibas and Stolfi divide-and-conquer Delaunay triangulation.
 
-The following code implements the Guibas and Stolfi divide-and-conquer
-algorithm as presented in:
-    L. J. Guibas, J. Stolfi, "Primitives for the manipulation of general
-    subdivisions and the computation of Voronoi diagrams" (1985)
-This algorithm computes the Delaunay triangulation of a set of input points.
+The kernel stores the quad-edge as parallel integer arrays instead of edge
+objects. Directed edges occupy a contiguous table:
+
+* ``org[e]`` is the origin vertex of directed edge ``e``
+* ``onext[e]`` is the next edge counterclockwise around that origin
+* ``oprev[e]`` is the previous edge around that origin
+* the symmetric edge is ``e ^ 1``
+
+Each undirected edge is a pair. Pair ``k`` occupies indices ``2k`` and
+``2k + 1``, which is why the symmetric partner is a bit flip rather than a
+stored pointer. ``oprev`` is the third array because splicing an edge into a
+vertex ring, and walking the left candidate during a merge, both need the
+clockwise neighbour in constant time.
+
+The merge loops are compiled with Numba. ``prange`` is not used: the
+divide-and-conquer tree is a chain of dependent merges, and ``prange`` does
+not apply to that recursion. The merge below is the same bottom-up pairing
+the object kernel used, written as array loops so Numba can compile it.
 """
 
-import paralleldelaunay.triangulation_core.linear_algebra as linalg
-import paralleldelaunay.triangulation_core.points_tools.split_list as split_list
-from paralleldelaunay.triangulation_core.triangulation_primitives import (
-    make_primitives,
-)
+import numpy as np
+from numba import njit
 
-# --------------------------- Edge finding functions --------------------------
+# --------------------------------- Predicates --------------------------------
 
 
-def lowest_common_tangent(h_left, h_right):
-    """Find lowest y-value tangential edge connecting two triangulations.
+@njit
+def _on_right(pts, p1, p2, p3):
+    """True when vertex ``p3`` is to the right of directed line ``p1`` -> ``p2``."""
+    p1x = pts[p1, 0]
+    p1y = pts[p1, 1]
+    p2x = pts[p2, 0]
+    p2y = pts[p2, 1]
+    p3x = pts[p3, 0]
+    p3y = pts[p3, 1]
+    cross = (p1x - p3x) * (p2y - p3y) - (p1y - p3y) * (p2x - p3x)
+    return cross > 0.0
 
-    Given two fully triangulated sets of points, this function finds an
-    edge connecting the two triangulations. Each triangulation forms a convex
-    hull of edges. The edge to be found by this function is the edge with the
-    lowest y-value point which is still tangential to both hulls. This is
-    known as the 'base' edge, as it is the first edge connecting two
-    separately triangulated point sets.
 
-    Parameters
-    ----------
-    h_left : TriangulationEdges
-    h_right : TriangulationEdges
+@njit
+def _on_left(pts, p1, p2, p3):
+    """True when vertex ``p3`` is to the left of directed line ``p1`` -> ``p2``."""
+    p1x = pts[p1, 0]
+    p1y = pts[p1, 1]
+    p2x = pts[p2, 0]
+    p2y = pts[p2, 1]
+    p3x = pts[p3, 0]
+    p3y = pts[p3, 1]
+    cross = (p1x - p3x) * (p2y - p3y) - (p1y - p3y) * (p2x - p3x)
+    return cross < 0.0
 
-    Returns
-    -------
-    left_e : int
-        The index of the edge in the right hull which forms one end of the
-        base edge.
-    right_e : int
-        The index of the edge in the left hull which forms the other end of
-        the base edge.
+
+@njit
+def _in_circle(pts, a, b, c, d):
+    """True when vertex ``d`` is inside the circle through ``a``, ``b``, ``c``."""
+    c1 = pts[a, 0] - pts[d, 0]
+    c2 = pts[b, 0] - pts[d, 0]
+    c3 = pts[c, 0] - pts[d, 0]
+    u1 = pts[a, 1] - pts[d, 1]
+    u2 = pts[b, 1] - pts[d, 1]
+    u3 = pts[c, 1] - pts[d, 1]
+    v1 = c1 * c1 + u1 * u1
+    v2 = c2 * c2 + u2 * u2
+    v3 = c3 * c3 + u3 * u3
+    det = (
+        c1 * ((u2 * v3) - (v2 * u3))
+        - c2 * ((u1 * v3) - (v1 * u3))
+        + c3 * ((u1 * v2) - (v1 * u2))
+    )
+    return det < 0.0
+
+
+@njit
+def _same_point(pts, i, j):
+    """True when two vertex indices have identical coordinates."""
+    return pts[i, 0] == pts[j, 0] and pts[i, 1] == pts[j, 1]
+
+
+# ------------------------------- Quad-edge edits -----------------------------
+
+
+@njit
+def _splice(a, b, onext, oprev):
+    """Swap the counterclockwise successors of two edges.
+
+    This is the array form of Guibas and Stolfi's ``Splice``. Afterwards,
+    ``a`` leads the ring that ``b`` used to lead, and the ``oprev`` entry of
+    each successor follows the swap. Predecessors of ``a`` and ``b`` stay put.
     """
-    left_e = h_left.outer
-    right_e = h_right.inner
+    a_next = onext[a]
+    b_next = onext[b]
+    oprev[a_next] = b
+    oprev[b_next] = a
+    onext[a] = b_next
+    onext[b] = a_next
 
-    pts_left = h_left.points
-    pts_right = h_right.points
 
-    p1 = pts_left[h_left.edges[left_e].org]
-    p2 = pts_left[h_left.edges[left_e].dest]
+@njit
+def _alloc(onext, oprev, free_stack, state):
+    """Return a fresh directed edge, recycling a killed pair when possible.
 
-    p4 = pts_right[h_right.edges[right_e].org]
-    p5 = pts_right[h_right.edges[right_e].dest]
+    ``state[0]`` is the high-water mark of directed slots, always even.
+    ``state[1]`` is the number of recycled pairs on ``free_stack``. The
+    returned index is even; its symmetric partner is ``index ^ 1``.
+    """
+    if state[1] > 0:
+        state[1] -= 1
+        edge = free_stack[state[1]]
+    else:
+        edge = state[0]
+        if edge + 2 > onext.shape[0]:
+            raise RuntimeError("edge capacity exceeded")
+        state[0] = edge + 2
+    mirror = edge ^ 1
+    onext[edge] = edge
+    onext[mirror] = mirror
+    oprev[edge] = edge
+    oprev[mirror] = mirror
+    return edge
 
+
+@njit
+def _kill(edge, org, onext, oprev, free_stack, state):
+    """Unlink an edge from both endpoints and recycle the pair."""
+    _splice(edge, oprev[edge], onext, oprev)
+    mirror = edge ^ 1
+    _splice(mirror, oprev[mirror], onext, oprev)
+    org[edge] = -1
+    org[mirror] = -1
+    pair = edge ^ 1 if edge & 1 else edge
+    free_stack[state[1]] = pair
+    state[1] += 1
+
+
+@njit
+def _connect(a, b, org, onext, oprev, free_stack, state):
+    """Create an edge from the destination of ``a`` to the origin of ``b``."""
+    edge = _alloc(onext, oprev, free_stack, state)
+    org[edge] = org[a ^ 1]
+    org[edge ^ 1] = org[b]
+    _splice(edge, oprev[a ^ 1], onext, oprev)
+    _splice(edge ^ 1, b, onext, oprev)
+    return edge
+
+
+# --------------------------------- Primitives --------------------------------
+
+
+@njit
+def _add_segment(
+    org, onext, oprev, free_stack, state, inner, outer, count, a, b
+):
+    """Append the primitive consisting of one edge and its symmetric."""
+    edge = _alloc(onext, oprev, free_stack, state)
+    org[edge] = a
+    org[edge ^ 1] = b
+    inner[count] = edge
+    outer[count] = edge ^ 1
+    return count + 1
+
+
+@njit
+def _add_triangle(
+    pts, org, onext, oprev, free_stack, state, inner, outer, count, a, b, c
+):
+    """Append a triangle, or an open chain when the three points are collinear."""
+    first = _alloc(onext, oprev, free_stack, state)
+    org[first] = a
+    org[first ^ 1] = b
+    second = _alloc(onext, oprev, free_stack, state)
+    org[second] = b
+    org[second ^ 1] = c
+    _splice(first ^ 1, second, onext, oprev)
+
+    if _on_right(pts, a, b, c):
+        _connect(second, first, org, onext, oprev, free_stack, state)
+        inner[count] = first
+        outer[count] = second ^ 1
+    elif _on_left(pts, a, b, c):
+        closing = _connect(second, first, org, onext, oprev, free_stack, state)
+        inner[count] = closing ^ 1
+        outer[count] = closing
+    else:
+        inner[count] = first
+        outer[count] = second ^ 1
+    return count + 1
+
+
+# ----------------------------------- Merge -----------------------------------
+
+
+@njit
+def _lowest_common_tangent(pts, org, onext, oprev, left_e, right_e):
+    """Walk both hulls to the lower tangent between them.
+
+    ``left_e`` starts as the rightmost edge of the left hull. ``right_e``
+    starts as the leftmost edge of the right hull. Each iteration advances
+    the endpoint that is not yet on the common lower tangent.
+    """
+    limit = pts.shape[0] * 4 + 8
+    steps = 0
     while True:
-        if linalg.on_right(p1, p2, pts_right[h_right.edges[right_e].org]):
-            left_e = h_left.edges[h_left.edges[left_e].sym].onext
-
-            p1 = pts_left[h_left.edges[left_e].org]
-            p2 = pts_left[h_left.edges[left_e].dest]
-
-        elif linalg.on_left(p4, p5, pts_left[h_left.edges[left_e].org]):
-            right_e = h_right.edges[h_right.edges[right_e].sym].oprev
-            p4 = pts_right[h_right.edges[right_e].org]
-            p5 = pts_right[h_right.edges[right_e].dest]
-
+        steps += 1
+        if steps > limit:
+            raise RuntimeError("lowest common tangent did not finish")
+        if _on_right(pts, org[left_e], org[left_e ^ 1], org[right_e]):
+            left_e = onext[left_e ^ 1]
+        elif _on_left(pts, org[right_e], org[right_e ^ 1], org[left_e]):
+            right_e = oprev[right_e ^ 1]
         else:
             return left_e, right_e
 
 
-def rcand_func(rhull, rcand, b1, b2):
-    """Search right hull for candidate edge.
-
-    This function finds the candidate edge from the right hull triangulation.
-    An initial candidate 'rcand' is given. This candidate is tested. If the
-    candidate fails it is deleted from the triangulation and the next
-    potential candidate is considered. While a valid candidate has not been
-    found this process continues until a valid candidate is found.
-
-    Parameters
-    ----------
-    rhull : TriangulationEdges
-        The triangulation of edges on the right hand side.
-    rcand : TYPE
-        DESCRIPTION.
-    b1 : list
-        DESCRIPTION.
-    b2 : list
-        DESCRIPTION.
-
-    Returns
-    -------
-    rhull : TriangulationEdges
-        DESCRIPTION.
-    rcand : TYPE
-        DESCRIPTION.
-    """
-    completed = False
-    while not completed:
-        rcand_onext_dest = rhull.edges[rhull.edges[rcand].onext].dest
-        rcand_dest = rhull.edges[rcand].dest
-        ccw_test = linalg.on_right(b1, b2, rhull.points[rcand_onext_dest])
-        next_cand_invalid = linalg.in_circle(
-            b2, b1, rhull.points[rcand_dest], rhull.points[rcand_onext_dest]
-        )
-        if ccw_test and next_cand_invalid:
-            t = rhull.edges[rcand].onext
-            rhull.kill_edge(rcand)
-            rcand = t
-        else:
-            completed = True
-    return rhull, rcand
-
-
-def lcand_func(lhull, lcand, b1, b2):
-    """Test for the left candidate edge, similar to rcand_func."""
-    completed = False
-    while not completed:
-        lcand_oprev_dest = lhull.edges[lhull.edges[lcand].oprev].dest
-        lcand_dest = lhull.edges[lcand].dest
-        ccw_test = linalg.on_right(b1, b2, lhull.points[lcand_oprev_dest])
-        next_cand_invalid = linalg.in_circle(
-            b2, b1, lhull.points[lcand_dest], lhull.points[lcand_oprev_dest]
-        )
-        if ccw_test and next_cand_invalid:
-            t = lhull.edges[lcand].oprev
-            lhull.kill_edge(lcand)
-            lcand = t
-        else:
-            completed = True
-    return lhull, lcand
-
-
-def candidate_decider(rcand, lcand, lcand_valid, triangulation):
-    """Choose correct edge for triangulation.
-
-    Given two potential edges which could be added to the triangulation,
-    decide which of the edges is the correct one to add.
-
-    Parameters
-    ----------
-    rcand : int
-        Index of right candidate edge.
-    lcand : int
-        Index of left candidate edge.
-    lcand_valid : TYPE
-        DESCRIPTION.
-    triangulation : TriangulationEdges
-        DESCRIPTION.
-
-    Returns
-    -------
-    result : bool
-        DESCRIPTION.
-    """
-    pt1 = triangulation.points[triangulation.edges[rcand].dest]
-    pt2 = triangulation.points[triangulation.edges[rcand].org]
-    pt3 = triangulation.points[triangulation.edges[lcand].org]
-    pt4 = triangulation.points[triangulation.edges[lcand].dest]
-    result = lcand_valid and linalg.in_circle(pt1, pt2, pt3, pt4)
-    return result
-
-
-# ----------------------------- Merging functions -----------------------------
-
-
-def combine_triangulations(ldi, rdi, hull_left, hull_right):
-    """Merge two TriangulationEdges objects into one.
-
-    Parameters
-    ----------
-    ldi : TYPE
-        DESCRIPTION.
-    rdi : TYPE
-        DESCRIPTION.
-    hull_left : TriangulationEdges
-        DESCRIPTION.
-    hull_right : TriangulationEdges
-        DESCRIPTION.
-
-    Returns
-    -------
-    base : TYPE
-        DESCRIPTION.
-    edges : TriangulationEdges
-        DESCRIPTION.
-    """
-    ldo = hull_left.inner
-    rdo = hull_right.outer
-    rdi += hull_left.num_edges
-    rdo += hull_left.num_edges
-
-    edges = hull_left.combine_triangulations(hull_right)
-    base = edges.connect(edges.edges[ldi].sym, rdi)
-
-    # Correct the base edge
-    ldi_org = edges.points[edges.edges[ldi].org]
-    ldo_org = edges.points[edges.edges[ldo].org]
-    rdi_org = edges.points[edges.edges[rdi].org]
-    rdo_org = edges.points[edges.edges[rdo].org]
-
-    if linalg.list_equal(ldi_org, ldo_org):
-        ldo = base
-    if linalg.list_equal(rdi_org, rdo_org):
-        rdo = edges.edges[base].sym
-
-    edges.set_extreme_edges(ldo, rdo)
-
-    return base, edges
-
-
-def zip_hulls(base, triang):
-    """Zip together two separate hulls' triangulations.
-
-    Given a triangulation containing two separate hulls and the base edge
-    connecting the hulls, triangulate the space between the hulls. This is
-    referred to as 'zipping' the hulls together.
-
-    Parameters
-    ----------
-    base : int
-        Index of base edge.
-    triang : TriangulationEdges
-        Incomplete triangulation, with known base edge.
-
-    Returns
-    -------
-    d_triang : TriangulationEdges
-        Instance of TriangulationEdges class object containing the finished
-        Delaunay triangulation of the input triangulation.
-    """
+@njit
+def _right_candidate(pts, org, onext, oprev, free_stack, state, rcand, b1, b2):
+    """Delete right-hull edges that fail the incircle test against the base."""
+    limit = pts.shape[0] + 2
+    steps = 0
     while True:
-        # Make variables for commonly used base edge points
-        base1 = triang.points[triang.edges[base].org]
-        base2 = triang.points[triang.edges[base].dest]
+        steps += 1
+        if steps > limit:
+            raise RuntimeError("right candidate did not finish")
+        nxt = onext[rcand]
+        ccw = _on_right(pts, b1, b2, org[nxt ^ 1])
+        inside = _in_circle(pts, b2, b1, org[rcand ^ 1], org[nxt ^ 1])
+        if ccw and inside:
+            _kill(rcand, org, onext, oprev, free_stack, state)
+            rcand = nxt
+        else:
+            return rcand
 
-        # Find the first candidate edges for triangulation from each subset
-        rcand = triang.edges[triang.edges[base].sym].onext
-        pt1 = triang.points[triang.edges[rcand].dest]
-        rcand_valid = linalg.on_right(base1, base2, pt1)
 
-        lcand = triang.edges[base].oprev
-        pt2 = triang.points[triang.edges[lcand].dest]
-        lcand_valid = linalg.on_right(base1, base2, pt2)
+@njit
+def _left_candidate(pts, org, onext, oprev, free_stack, state, lcand, b1, b2):
+    """Delete left-hull edges that fail the incircle test against the base."""
+    limit = pts.shape[0] + 2
+    steps = 0
+    while True:
+        steps += 1
+        if steps > limit:
+            raise RuntimeError("left candidate did not finish")
+        prev = oprev[lcand]
+        ccw = _on_right(pts, b1, b2, org[prev ^ 1])
+        inside = _in_circle(pts, b2, b1, org[lcand ^ 1], org[prev ^ 1])
+        if ccw and inside:
+            _kill(lcand, org, onext, oprev, free_stack, state)
+            lcand = prev
+        else:
+            return lcand
 
-        # If neither candidate is valid, hull merge is complete
-        if not rcand_valid and not lcand_valid:
-            break
+
+@njit
+def _left_candidate_wins(pts, org, rcand, lcand, lcand_valid):
+    """True when the left candidate is the next base edge."""
+    if not lcand_valid:
+        return False
+    return _in_circle(
+        pts, org[rcand ^ 1], org[rcand], org[lcand], org[lcand ^ 1]
+    )
+
+
+@njit
+def _zip(pts, org, onext, oprev, free_stack, state, base):
+    """Fill the channel between two hulls, rising from the lower tangent."""
+    limit = pts.shape[0] * 4 + 8
+    steps = 0
+    while True:
+        steps += 1
+        if steps > limit:
+            raise RuntimeError("hull merge did not finish")
+        base_org = org[base]
+        base_dest = org[base ^ 1]
+
+        rcand = onext[base ^ 1]
+        rcand_valid = _on_right(pts, base_org, base_dest, org[rcand ^ 1])
+        lcand = oprev[base]
+        lcand_valid = _on_right(pts, base_org, base_dest, org[lcand ^ 1])
+        if (not rcand_valid) and (not lcand_valid):
+            return
 
         if rcand_valid:
-            triang, rcand = rcand_func(triang, rcand, base1, base2)
-
+            rcand = _right_candidate(
+                pts,
+                org,
+                onext,
+                oprev,
+                free_stack,
+                state,
+                rcand,
+                base_org,
+                base_dest,
+            )
         if lcand_valid:
-            triang, lcand = lcand_func(triang, lcand, base1, base2)
+            lcand = _left_candidate(
+                pts,
+                org,
+                onext,
+                oprev,
+                free_stack,
+                state,
+                lcand,
+                base_org,
+                base_dest,
+            )
 
-        lcand_strong_valid = candidate_decider(
-            rcand, lcand, lcand_valid, triang
+        if (not rcand_valid) or _left_candidate_wins(
+            pts, org, rcand, lcand, lcand_valid
+        ):
+            base = _connect(
+                lcand, base ^ 1, org, onext, oprev, free_stack, state
+            )
+        else:
+            base = _connect(
+                base ^ 1, rcand ^ 1, org, onext, oprev, free_stack, state
+            )
+
+
+@njit
+def _merge_pair(
+    pts, org, onext, oprev, free_stack, state, inner, outer, left, right, dest
+):
+    """Merge two adjacent partial triangulations into slot ``dest``."""
+    ldi, rdi = _lowest_common_tangent(
+        pts, org, onext, oprev, outer[left], inner[right]
+    )
+    ldo = inner[left]
+    rdo = outer[right]
+    base = _connect(ldi ^ 1, rdi, org, onext, oprev, free_stack, state)
+    if _same_point(pts, org[ldi], org[ldo]):
+        ldo = base
+    if _same_point(pts, org[rdi], org[rdo]):
+        rdo = base ^ 1
+    _zip(pts, org, onext, oprev, free_stack, state, base)
+    inner[dest] = ldo
+    outer[dest] = rdo
+
+
+@njit(cache=True)
+def _triangulate(pts):
+    """Triangulate lexicographically sorted points.
+
+    Returns ``org``, ``onext``, ``oprev``, and the directed-edge high-water
+    mark. Slots with ``org[e] < 0`` are killed edges waiting on the free list.
+    """
+    n = pts.shape[0]
+    # A triangulation has at most 3n - 6 undirected edges. The free list
+    # reuses killed pairs, so a small constant times n directed slots is enough.
+    cap = 8 * n + 32
+    org = np.empty(cap, np.int64)
+    onext = np.empty(cap, np.int64)
+    oprev = np.empty(cap, np.int64)
+    free_stack = np.empty(cap // 2, np.int64)
+    state = np.zeros(2, np.int64)
+
+    inner = np.empty(n, np.int64)
+    outer = np.empty(n, np.int64)
+
+    # Same grouping as groups_of_3: never leave a single point on its own.
+    if n % 3 == 1:
+        pair_points = 4
+    elif n % 3 == 2:
+        pair_points = 2
+    else:
+        pair_points = 0
+
+    count = 0
+    cursor = 0
+    while cursor < pair_points:
+        count = _add_segment(
+            org,
+            onext,
+            oprev,
+            free_stack,
+            state,
+            inner,
+            outer,
+            count,
+            cursor,
+            cursor + 1,
         )
+        cursor += 2
+    while cursor < n:
+        count = _add_triangle(
+            pts,
+            org,
+            onext,
+            oprev,
+            free_stack,
+            state,
+            inner,
+            outer,
+            count,
+            cursor,
+            cursor + 1,
+            cursor + 2,
+        )
+        cursor += 3
 
-        if not rcand_valid or lcand_strong_valid:
-            base = triang.connect(lcand, triang.edges[base].sym)
-        else:
-            base = triang.connect(
-                triang.edges[base].sym, triang.edges[rcand].sym
-            )
-    return triang
+    # Bottom-up pairing. Each pass replaces adjacent groups with their merge
+    # and leaves a trailing odd group untouched. prange does not fit this loop:
+    # the right group of pass k is an input to pass k + 1.
+    while count > 1:
+        merged = 0
+        index = 0
+        while index < count:
+            if index + 1 < count:
+                _merge_pair(
+                    pts,
+                    org,
+                    onext,
+                    oprev,
+                    free_stack,
+                    state,
+                    inner,
+                    outer,
+                    index,
+                    index + 1,
+                    merged,
+                )
+                merged += 1
+                index += 2
+            else:
+                inner[merged] = inner[index]
+                outer[merged] = outer[index]
+                merged += 1
+                index += 1
+        count = merged
+
+    return org, onext, oprev, state[0]
 
 
-def merge_triangulations(groups):
-    """Combine pairs of triangulations.
+# -------------------------------- Public type --------------------------------
 
-    Each entry of the groups list is a list of two (or one) triangulations.
-    This function takes each pair of triangulations and combines them.
+
+class Triangulation:
+    """Quad-edge arrays for one Delaunay triangulation.
+
+    ``num_edges`` is the directed-edge high-water mark. Indices below that
+    are either live or killed. A killed edge has ``org[e] < 0`` and is not
+    part of any ring. For a live edge ``e``:
+
+    * ``org[e]`` is the origin vertex
+    * ``org[e ^ 1]`` is the destination vertex
+    * ``onext[e]`` is the next edge counterclockwise around the origin
+    * ``oprev[e]`` is the previous edge around the origin
 
     Parameters
     ----------
-    groups : list
-        List of pairs of triangulations.
-
-    Returns
-    -------
-    list
-        List of merged triangulations.
+    points : ndarray, shape (n, 2)
+        Input coordinates, in the index order used by ``org``.
+    org, onext, oprev : ndarray of int64
+        Parallel quad-edge arrays.
+    num_edges : int
+        Number of directed slots in use, including killed holes.
     """
-    triangulations = []
-    for group in groups:
-        if len(group) == 2:
-            # Find the first edges to connect the separate triangulations
-            ldi, rdi = lowest_common_tangent(group[0], group[1])
 
-            # Combine the two hulls into a single set of edges
-            base, d_triang = combine_triangulations(
-                ldi, rdi, group[0], group[1]
-            )
-
-            # Given the starting base edge, fill in the edges between the hulls
-            d_triang = zip_hulls(base, d_triang)
-            triangulations.append(d_triang)
-        else:
-            triangulations.append(group[0])
-    return [
-        triangulations[i : i + 2] for i in range(0, len(triangulations), 2)
-    ]
-
-
-def recursive_group_merge(groups):
-    """Call merge_triangulations() recursively for triangulation.
-
-    Recursively merge triangulations in 'groups' until all points have been
-    triangulated.
-
-    Parameters
-    ----------
-    groups : list
-        List of pairs of triangulations.
-
-    Returns
-    -------
-    list
-        List containing the single completed Delauney triangulation.
-    """
-    while len(groups[0]) != 1:
-        groups = merge_triangulations(groups)
-    return groups
-
-
-# ------------------------------- Main function -------------------------------
+    def __init__(self, points, org, onext, oprev, num_edges):
+        self.points = points
+        self.org = org
+        self.onext = onext
+        self.oprev = oprev
+        self.num_edges = num_edges
 
 
 def triangulate(pts_subset):
-    """Perform triangulation in four steps for a list of input points.
+    """Triangulate a lexicographically sorted list of 2D points.
 
-    This function encapsulates the whole triangulation algorithm into four
-    steps. The function takes as input a list of points. Each point is of the
-    form [x, y], where x and y are the coordinates of the point.
-
-    Step 1) The list of points is split into groups. Each group has exactly
-            two or three points.
-    Step 2) For each group of two point, a single edge is generated. For each
-            group of three points, three edges forming a triangle are
-            generated. These are the 'primitive' triangulations.
-    Step 3) The primitive triangulations are paired into groups.
-    Step 4) The groups are then recursively merged until there is only a
-            single triangulation of all points remaining.
+    Points must already be sorted by increasing x, then increasing y. The
+    divide step consumes them as consecutive pairs and triples, so a point
+    out of order is not a different algorithm: it is the wrong set of merges.
 
     Parameters
     ----------
-    pts_subset : list
-        A list of points with the form [ [x1, y1], [x2, y2], ..., [xn, yn] ]
-        The first element of each list represents the x-coordinate, the second
-        entry the y-coordinate.
+    pts_subset : array-like, shape (n, 2)
+        Sorted coordinates. ``n`` must be at least 2.
 
     Returns
     -------
-    out : list
-        List with a single element. The TriangulationEdges class object with
-        the completed Delauney triangulation of the input points.
-        See TriangulationEdges docstring for further info.
+    Triangulation
+        Quad-edge arrays for the Delaunay triangulation.
     """
-    split_pts = split_list.groups_of_3(pts_subset)
-    primitives = make_primitives(split_pts)
-    # group the primitives into pairs of adjacent primitives
-    groups = [primitives[i : i + 2] for i in range(0, len(primitives), 2)]
-    groups = recursive_group_merge(groups)
-    return groups[0][0]
+    pts = np.asarray(pts_subset, dtype=np.float64)
+    if pts.ndim != 2 or pts.shape[1] != 2:
+        raise ValueError("points must have shape (n, 2)")
+    if pts.shape[0] < 2:
+        raise ValueError("need at least two points")
+    pts = np.ascontiguousarray(pts)
+    org, onext, oprev, num_edges = _triangulate(pts)
+    num_edges = int(num_edges)
+    return Triangulation(
+        pts,
+        np.ascontiguousarray(org[:num_edges]),
+        np.ascontiguousarray(onext[:num_edges]),
+        np.ascontiguousarray(oprev[:num_edges]),
+        num_edges,
+    )

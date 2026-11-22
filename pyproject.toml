@@ -1,7 +1,7 @@
 [project]
 name = "parallel-delaunay"
 version = "1.0.0"
-description = "Parallel implementation of Guibas & Stolfi's divide-and-conquer algorithm for Delaunay triangulation, using MPI in Python."
+description = "Numba implementation of Guibas & Stolfi's divide-and-conquer algorithm for Delaunay triangulation."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -11,7 +11,7 @@ authors = [
 requires-python = ">=3.11"
 dependencies = [
     "matplotlib>=3.6.2",
-    "mpi4py>=3.1.4",
+    "numba>=0.61",
     "numpy>=1.23.5",
     "scipy>=1.10.0",
 ]

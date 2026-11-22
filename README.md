@@ -7,7 +7,9 @@ An example Delaunay triangulation output for 32 points is shown below.
 
 **Why is this library special?**
 
-Speed! This is a pure python implementation of the Guibas &amp; Stolfi's divide and conquer algorithm. The divide and conquer algorithm has been shown to be the [fastest](https://people.eecs.berkeley.edu/~jrs/meshpapers/SuDrysdale.pdf) DT generation technique, with O(*n* log *n*) running time. Furthermore, this code has been parallelised using the MPI for Python ([mpi4py](https://github.com/mpi4py/mpi4py)) library to utilise multiple CPU cores. This allows the algorithm to be efficiently scaled for distributed computing across supercomputer nodes.
+It is a Numba port of Guibas &amp; Stolfi's divide-and-conquer algorithm, which runs in O(*n* log *n*) and is among the [fastest](https://people.eecs.berkeley.edu/~jrs/meshpapers/SuDrysdale.pdf) Delaunay techniques. The kernel does not use edge objects. Each directed edge is an index into parallel arrays: `org[e]` is the origin vertex and `onext[e]` is the next edge counterclockwise around that origin. The symmetric edge is `e ^ 1`, because each undirected edge occupies the pair of slots `2k` and `2k + 1`. The merge loops are marked `@njit`, so Numba compiles them to machine code.
+
+Two limits are part of the design. Numba's `prange` does not fit the recursive divide tree, so the merge stays a serial bottom-up loop. The array layout is also a real rewrite of the kernel, not a wrapper around the old objects. The MPI driver is gone.
 
 # Installation
 
@@ -45,15 +47,21 @@ make format
 
 # Benchmarking
 
-### Single core results
+`triangulation_benchmarks.py` times this kernel against `scipy.spatial.Delaunay`. Numba compiles on the first call, so the script triangulates a tiny point set before the timed loop.
 
-As seen in the graph below, this Delaunay triangulation implementation scales just as efficiently as the SciPy implementation. The SciPy library is written in C and wrapped in Python for ease of use. As a result, the SciPy DT algorithm is consistently around 40x faster for a given number of points. However, the benefit of my library is that it can take advantage of multiple CPU cores, offering a performance advantage unavailable to SciPy users. By utilising the multiple cores available in modern computers, the run time can be reduced linearly by a factor approximately equal to the number of available threads.
+```bash
+uv run python triangulation_benchmarks.py
+```
+
+`scipi_comparison.py` prints one comparison for 1000 points:
+
+```bash
+uv run python scipi_comparison.py
+```
+
+The figure below is the earlier pure-Python kernel, which ran about 40× slower than SciPy. It is not a timing of the Numba kernel.
 
 <img src="./images/Figure 2021-07-02 210145.png" alt="drawing" width="700"/>
-
-This graph can be reproduced by running `uv run python triangulation_benchmarks.py`.
-
-The MPI path can be checked with `uv run mpiexec -np 4 python triangulation_mpi_test.py`.
 
 ## Structure
 This repository is currently structured as follows.
@@ -64,10 +72,8 @@ This repository is currently structured as follows.
     │   │   ├── points_tools
     │   │   │   ├── generate_values.py
     │   │   │   └── split_list.py
-    │   │   ├── edge_topology.py
     │   │   ├── linear_algebra.py
-    │   │   ├── triangulation.py
-    │   │   └── triangulation_primitives.py
+    │   │   └── triangulation.py
     │   └── utilities
     │       └── settings.py
     ├── tests
@@ -77,7 +83,6 @@ This repository is currently structured as follows.
     │   └── test_triangulate.py
     ├── scipi_comparison.py
     ├── triangulation_benchmarks.py
-    ├── triangulation_mpi_test.py
     └── pyproject.toml
 
 ## References

@@ -15,6 +15,9 @@ from paralleldelaunay.utilities.settings import World
 
 # -----------------------------------------------------------------------------
 
+# Compile the Numba kernel before the timed runs.
+triangulate([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+
 start = time.time()
 world_size = [0, 1000, 0, 1000]
 world = World(world_size)
