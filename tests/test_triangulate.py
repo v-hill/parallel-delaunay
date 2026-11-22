@@ -52,6 +52,6 @@ def test_triangulate_matches_scipy():
     scipy_triangles = {
         tuple(sorted(simplex)) for simplex in Delaunay(points).simplices
     }
-    assert (
-        _triangles(triangulation) == scipy_triangles
-    ), "divide-and-conquer triangles differ from scipy.spatial.Delaunay"
+    assert _triangles(triangulation) == scipy_triangles, (
+        "divide-and-conquer triangles differ from scipy.spatial.Delaunay"
+    )

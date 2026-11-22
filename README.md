@@ -35,6 +35,14 @@ Unit tests cover the geometry helpers. One test runs the full triangulation and 
 make test
 ```
 
+# Formatting
+
+Format the Python sources with Ruff:
+
+```bash
+make format
+```
+
 # Benchmarking
 
 ### Single core results

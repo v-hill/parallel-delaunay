@@ -21,11 +21,10 @@ repos:
     hooks:
       - id: codespell
 
-  - repo: https://github.com/psf/black
-    rev: 22.3.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.5
     hooks:
-      - id: black
-        args: [--safe, --quiet, --line-length=79]
+      - id: ruff-format
 
   - repo: https://github.com/PyCQA/flake8
     rev: 3.9.2

@@ -4,7 +4,6 @@ This module contains functions for creating triangulations from 2 and 3 points,
 respectively known as the line-primitive and the triangle-primitive.
 """
 
-
 import paralleldelaunay.triangulation_core.edge_topology as edge_topology
 import paralleldelaunay.triangulation_core.linear_algebra as linalg
 

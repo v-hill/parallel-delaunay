@@ -24,10 +24,10 @@ start = time.time()
 positions = lexicographic_sort(positions)
 triangulation = triangulate(positions)
 elapsed1 = time.time() - start
-print(f"vhill: {num_points} points in {elapsed1*1000:0.1f} ms")
+print(f"vhill: {num_points} points in {elapsed1 * 1000:0.1f} ms")
 
 start = time.time()
 tri = Delaunay(positions)
 elapsed2 = time.time() - start
-print(f"scipy: {num_points} points in {elapsed2*1000:0.1f} ms")
-print(f"    scale factor {elapsed1/elapsed2:0.1f}x \n")
+print(f"scipy: {num_points} points in {elapsed2 * 1000:0.1f} ms")
+print(f"    scale factor {elapsed1 / elapsed2:0.1f}x \n")

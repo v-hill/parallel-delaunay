@@ -43,14 +43,14 @@ data = comm.scatter(data, root=0)
 primitives = make_primitives(data)
 groups = [primitives[i : i + 2] for i in range(0, len(primitives), 2)]
 triangulation = recursive_group_merge(groups)
-print(f"Rank: {rank}, elapsed time: {(MPI.Wtime()-wt_start)*1000:0.3f} ms")
+print(f"Rank: {rank}, elapsed time: {(MPI.Wtime() - wt_start) * 1000:0.3f} ms")
 
 new_groups = comm.gather(triangulation, root=0)
 
 if rank == 0:
     print(
         "After recombination, elapsed time:"
-        f" {(MPI.Wtime()-wt_start)*1000:0.3f} ms"
+        f" {(MPI.Wtime() - wt_start) * 1000:0.3f} ms"
     )
     final_groups = []
     for i in range(0, size, 2):
@@ -61,4 +61,4 @@ if rank == 0:
     triangulation = triangulation[0][0]
     wt_end = MPI.Wtime()
     elapsed = wt_end - wt_start
-    print(f"Total elapsed time: {elapsed*1000:0.3f} ms")
+    print(f"Total elapsed time: {elapsed * 1000:0.3f} ms")

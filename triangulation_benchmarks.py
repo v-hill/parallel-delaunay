@@ -33,14 +33,14 @@ for num in num_points:
     triangulation = triangulate(positions)
     elapsed1 = time.time() - start
     y1.append(elapsed1)
-    print(f"vhill: {num:<8} points in {elapsed1*1000:0.1f} ms")
+    print(f"vhill: {num:<8} points in {elapsed1 * 1000:0.1f} ms")
 
     start = time.time()
     tri = Delaunay(positions)
     elapsed2 = time.time() - start
     y2.append(elapsed2)
-    print(f"scipy: {num:<8} points in {elapsed2*1000:0.1f} ms")
-    print(f"    scale factor {elapsed1/elapsed2:0.1f}x \n")
+    print(f"scipy: {num:<8} points in {elapsed2 * 1000:0.1f} ms")
+    print(f"    scale factor {elapsed1 / elapsed2:0.1f}x \n")
 
 fig, ax = plt.subplots(figsize=(6, 4), dpi=300)
 

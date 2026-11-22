@@ -21,9 +21,9 @@ Repository = "https://github.com/v-hill/parallel-delaunay"
 
 [dependency-groups]
 dev = [
-    "black",
     "pre-commit",
     "pytest>=9.2.0",
+    "ruff",
 ]
 
 [build-system]
@@ -34,9 +34,13 @@ build-backend = "uv_build"
 module-name = "paralleldelaunay"
 module-root = ""
 
-[tool.black]
+[tool.ruff]
 line-length = 79
-target-version = ["py311"]
+target-version = "py311"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 [tool.isort]
 profile = "black"

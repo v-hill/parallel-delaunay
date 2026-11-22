@@ -1,6 +1,5 @@
 """Functions for algebra on python list objects."""
 
-
 from math import sqrt
 from typing import Union
 
