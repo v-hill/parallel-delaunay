@@ -14,10 +14,9 @@ stored pointer. ``oprev`` is the third array because splicing an edge into a
 vertex ring, and walking the left candidate during a merge, both need the
 clockwise neighbour in constant time.
 
-The merge loops are compiled with Numba. ``prange`` is not used: the
-divide-and-conquer tree is a chain of dependent merges, and ``prange`` does
-not apply to that recursion. The merge below is the same bottom-up pairing
-the object kernel used, written as array loops so Numba can compile it.
+The merge loops are compiled with Numba. One call uses a single edge span.
+``triangulate(..., parallel=True)`` hands disjoint spans to Numba ``prange``,
+one bottom-up level at a time.
 """
 
 import numpy as np
@@ -98,21 +97,33 @@ def _splice(a, b, onext, oprev):
 
 
 @njit
-def _alloc(onext, oprev, free_stack, state):
+def _alloc(
+    onext, oprev, free_stack, free_top, span_high, span_limit, span_count
+):
     """Return a fresh directed edge, recycling a killed pair when possible.
 
-    ``state[0]`` is the high-water mark of directed slots, always even.
-    ``state[1]`` is the number of recycled pairs on ``free_stack``. The
+    ``free_top[0]`` is the number of recycled pairs on ``free_stack``. Fresh
+    pairs come from the first span that still has room: ``span_high[s]`` is
+    that span's even cursor and ``span_limit[s]`` is its exclusive end. The
     returned index is even; its symmetric partner is ``index ^ 1``.
     """
-    if state[1] > 0:
-        state[1] -= 1
-        edge = free_stack[state[1]]
+    top = free_top[0]
+    if top > 0:
+        top -= 1
+        free_top[0] = top
+        edge = free_stack[top]
     else:
-        edge = state[0]
-        if edge + 2 > onext.shape[0]:
+        edge = -1
+        span = 0
+        while span < span_count:
+            cursor = span_high[span]
+            if cursor + 2 <= span_limit[span]:
+                edge = cursor
+                span_high[span] = cursor + 2
+                break
+            span += 1
+        if edge < 0:
             raise RuntimeError("edge capacity exceeded")
-        state[0] = edge + 2
     mirror = edge ^ 1
     onext[edge] = edge
     onext[mirror] = mirror
@@ -122,7 +133,17 @@ def _alloc(onext, oprev, free_stack, state):
 
 
 @njit
-def _kill(edge, org, onext, oprev, free_stack, state):
+def _kill(
+    edge,
+    org,
+    onext,
+    oprev,
+    free_stack,
+    free_top,
+    span_high,
+    span_limit,
+    span_count,
+):
     """Unlink an edge from both endpoints and recycle the pair."""
     _splice(edge, oprev[edge], onext, oprev)
     mirror = edge ^ 1
@@ -130,14 +151,27 @@ def _kill(edge, org, onext, oprev, free_stack, state):
     org[edge] = -1
     org[mirror] = -1
     pair = edge ^ 1 if edge & 1 else edge
-    free_stack[state[1]] = pair
-    state[1] += 1
+    free_stack[free_top[0]] = pair
+    free_top[0] += 1
 
 
 @njit
-def _connect(a, b, org, onext, oprev, free_stack, state):
+def _connect(
+    a,
+    b,
+    org,
+    onext,
+    oprev,
+    free_stack,
+    free_top,
+    span_high,
+    span_limit,
+    span_count,
+):
     """Create an edge from the destination of ``a`` to the origin of ``b``."""
-    edge = _alloc(onext, oprev, free_stack, state)
+    edge = _alloc(
+        onext, oprev, free_stack, free_top, span_high, span_limit, span_count
+    )
     org[edge] = org[a ^ 1]
     org[edge ^ 1] = org[b]
     _splice(edge, oprev[a ^ 1], onext, oprev)
@@ -150,10 +184,24 @@ def _connect(a, b, org, onext, oprev, free_stack, state):
 
 @njit
 def _add_segment(
-    org, onext, oprev, free_stack, state, inner, outer, count, a, b
+    org,
+    onext,
+    oprev,
+    free_stack,
+    free_top,
+    span_high,
+    span_limit,
+    span_count,
+    inner,
+    outer,
+    count,
+    a,
+    b,
 ):
     """Append the primitive consisting of one edge and its symmetric."""
-    edge = _alloc(onext, oprev, free_stack, state)
+    edge = _alloc(
+        onext, oprev, free_stack, free_top, span_high, span_limit, span_count
+    )
     org[edge] = a
     org[edge ^ 1] = b
     inner[count] = edge
@@ -163,23 +211,63 @@ def _add_segment(
 
 @njit
 def _add_triangle(
-    pts, org, onext, oprev, free_stack, state, inner, outer, count, a, b, c
+    pts,
+    org,
+    onext,
+    oprev,
+    free_stack,
+    free_top,
+    span_high,
+    span_limit,
+    span_count,
+    inner,
+    outer,
+    count,
+    a,
+    b,
+    c,
 ):
     """Append a triangle, or an open chain when the three points are collinear."""
-    first = _alloc(onext, oprev, free_stack, state)
+    first = _alloc(
+        onext, oprev, free_stack, free_top, span_high, span_limit, span_count
+    )
     org[first] = a
     org[first ^ 1] = b
-    second = _alloc(onext, oprev, free_stack, state)
+    second = _alloc(
+        onext, oprev, free_stack, free_top, span_high, span_limit, span_count
+    )
     org[second] = b
     org[second ^ 1] = c
     _splice(first ^ 1, second, onext, oprev)
 
     if _on_right(pts, a, b, c):
-        _connect(second, first, org, onext, oprev, free_stack, state)
+        _connect(
+            second,
+            first,
+            org,
+            onext,
+            oprev,
+            free_stack,
+            free_top,
+            span_high,
+            span_limit,
+            span_count,
+        )
         inner[count] = first
         outer[count] = second ^ 1
     elif _on_left(pts, a, b, c):
-        closing = _connect(second, first, org, onext, oprev, free_stack, state)
+        closing = _connect(
+            second,
+            first,
+            org,
+            onext,
+            oprev,
+            free_stack,
+            free_top,
+            span_high,
+            span_limit,
+            span_count,
+        )
         inner[count] = closing ^ 1
         outer[count] = closing
     else:
@@ -214,7 +302,20 @@ def _lowest_common_tangent(pts, org, onext, oprev, left_e, right_e):
 
 
 @njit
-def _right_candidate(pts, org, onext, oprev, free_stack, state, rcand, b1, b2):
+def _right_candidate(
+    pts,
+    org,
+    onext,
+    oprev,
+    free_stack,
+    free_top,
+    span_high,
+    span_limit,
+    span_count,
+    rcand,
+    b1,
+    b2,
+):
     """Delete right-hull edges that fail the incircle test against the base."""
     limit = pts.shape[0] + 2
     steps = 0
@@ -226,14 +327,37 @@ def _right_candidate(pts, org, onext, oprev, free_stack, state, rcand, b1, b2):
         ccw = _on_right(pts, b1, b2, org[nxt ^ 1])
         inside = _in_circle(pts, b2, b1, org[rcand ^ 1], org[nxt ^ 1])
         if ccw and inside:
-            _kill(rcand, org, onext, oprev, free_stack, state)
+            _kill(
+                rcand,
+                org,
+                onext,
+                oprev,
+                free_stack,
+                free_top,
+                span_high,
+                span_limit,
+                span_count,
+            )
             rcand = nxt
         else:
             return rcand
 
 
 @njit
-def _left_candidate(pts, org, onext, oprev, free_stack, state, lcand, b1, b2):
+def _left_candidate(
+    pts,
+    org,
+    onext,
+    oprev,
+    free_stack,
+    free_top,
+    span_high,
+    span_limit,
+    span_count,
+    lcand,
+    b1,
+    b2,
+):
     """Delete left-hull edges that fail the incircle test against the base."""
     limit = pts.shape[0] + 2
     steps = 0
@@ -245,7 +369,17 @@ def _left_candidate(pts, org, onext, oprev, free_stack, state, lcand, b1, b2):
         ccw = _on_right(pts, b1, b2, org[prev ^ 1])
         inside = _in_circle(pts, b2, b1, org[lcand ^ 1], org[prev ^ 1])
         if ccw and inside:
-            _kill(lcand, org, onext, oprev, free_stack, state)
+            _kill(
+                lcand,
+                org,
+                onext,
+                oprev,
+                free_stack,
+                free_top,
+                span_high,
+                span_limit,
+                span_count,
+            )
             lcand = prev
         else:
             return lcand
@@ -262,7 +396,18 @@ def _left_candidate_wins(pts, org, rcand, lcand, lcand_valid):
 
 
 @njit
-def _zip(pts, org, onext, oprev, free_stack, state, base):
+def _zip(
+    pts,
+    org,
+    onext,
+    oprev,
+    free_stack,
+    free_top,
+    span_high,
+    span_limit,
+    span_count,
+    base,
+):
     """Fill the channel between two hulls, rising from the lower tangent."""
     limit = pts.shape[0] * 4 + 8
     steps = 0
@@ -287,7 +432,10 @@ def _zip(pts, org, onext, oprev, free_stack, state, base):
                 onext,
                 oprev,
                 free_stack,
-                state,
+                free_top,
+                span_high,
+                span_limit,
+                span_count,
                 rcand,
                 base_org,
                 base_dest,
@@ -299,7 +447,10 @@ def _zip(pts, org, onext, oprev, free_stack, state, base):
                 onext,
                 oprev,
                 free_stack,
-                state,
+                free_top,
+                span_high,
+                span_limit,
+                span_count,
                 lcand,
                 base_org,
                 base_dest,
@@ -309,17 +460,48 @@ def _zip(pts, org, onext, oprev, free_stack, state, base):
             pts, org, rcand, lcand, lcand_valid
         ):
             base = _connect(
-                lcand, base ^ 1, org, onext, oprev, free_stack, state
+                lcand,
+                base ^ 1,
+                org,
+                onext,
+                oprev,
+                free_stack,
+                free_top,
+                span_high,
+                span_limit,
+                span_count,
             )
         else:
             base = _connect(
-                base ^ 1, rcand ^ 1, org, onext, oprev, free_stack, state
+                base ^ 1,
+                rcand ^ 1,
+                org,
+                onext,
+                oprev,
+                free_stack,
+                free_top,
+                span_high,
+                span_limit,
+                span_count,
             )
 
 
 @njit
 def _merge_pair(
-    pts, org, onext, oprev, free_stack, state, inner, outer, left, right, dest
+    pts,
+    org,
+    onext,
+    oprev,
+    free_stack,
+    free_top,
+    span_high,
+    span_limit,
+    span_count,
+    inner,
+    outer,
+    left,
+    right,
+    dest,
 ):
     """Merge two adjacent partial triangulations into slot ``dest``."""
     ldi, rdi = _lowest_common_tangent(
@@ -327,14 +509,143 @@ def _merge_pair(
     )
     ldo = inner[left]
     rdo = outer[right]
-    base = _connect(ldi ^ 1, rdi, org, onext, oprev, free_stack, state)
+    base = _connect(
+        ldi ^ 1,
+        rdi,
+        org,
+        onext,
+        oprev,
+        free_stack,
+        free_top,
+        span_high,
+        span_limit,
+        span_count,
+    )
     if _same_point(pts, org[ldi], org[ldo]):
         ldo = base
     if _same_point(pts, org[rdi], org[rdo]):
         rdo = base ^ 1
-    _zip(pts, org, onext, oprev, free_stack, state, base)
+    _zip(
+        pts,
+        org,
+        onext,
+        oprev,
+        free_stack,
+        free_top,
+        span_high,
+        span_limit,
+        span_count,
+        base,
+    )
     inner[dest] = ldo
     outer[dest] = rdo
+
+
+@njit
+def _fill_range(
+    pts,
+    lo,
+    hi,
+    org,
+    onext,
+    oprev,
+    free_stack,
+    free_top,
+    span_high,
+    span_limit,
+    span_count,
+):
+    """Triangulate points ``[lo, hi)`` into the spans already set up.
+
+    Point indices are positions in the full ``pts`` array. New edges are
+    taken only from ``free_stack`` and ``span_high`` / ``span_limit``. Returns
+    the inner and outer hull edges of the finished subset.
+    """
+    count_points = hi - lo
+    if count_points < 2:
+        raise RuntimeError("block has fewer than two points")
+    # Same grouping as groups_of_3: never leave a single point on its own.
+    if count_points % 3 == 1:
+        pair_points = 4
+    elif count_points % 3 == 2:
+        pair_points = 2
+    else:
+        pair_points = 0
+
+    inner = np.empty(count_points, np.int64)
+    outer = np.empty(count_points, np.int64)
+    count = 0
+    cursor = lo
+    pair_end = lo + pair_points
+    while cursor < pair_end:
+        count = _add_segment(
+            org,
+            onext,
+            oprev,
+            free_stack,
+            free_top,
+            span_high,
+            span_limit,
+            span_count,
+            inner,
+            outer,
+            count,
+            cursor,
+            cursor + 1,
+        )
+        cursor += 2
+    while cursor < hi:
+        count = _add_triangle(
+            pts,
+            org,
+            onext,
+            oprev,
+            free_stack,
+            free_top,
+            span_high,
+            span_limit,
+            span_count,
+            inner,
+            outer,
+            count,
+            cursor,
+            cursor + 1,
+            cursor + 2,
+        )
+        cursor += 3
+
+    # Bottom-up pairing inside this span. A later level can merge the hull
+    # this returns with a sibling span, but that sibling is not visible here.
+    while count > 1:
+        merged = 0
+        index = 0
+        while index < count:
+            if index + 1 < count:
+                _merge_pair(
+                    pts,
+                    org,
+                    onext,
+                    oprev,
+                    free_stack,
+                    free_top,
+                    span_high,
+                    span_limit,
+                    span_count,
+                    inner,
+                    outer,
+                    index,
+                    index + 1,
+                    merged,
+                )
+                merged += 1
+                index += 2
+            else:
+                inner[merged] = inner[index]
+                outer[merged] = outer[index]
+                merged += 1
+                index += 1
+        count = merged
+    return inner[0], outer[0]
 
 
 @njit(cache=True)
@@ -352,83 +663,24 @@ def _triangulate(pts):
     onext = np.empty(cap, np.int64)
     oprev = np.empty(cap, np.int64)
     free_stack = np.empty(cap // 2, np.int64)
-    state = np.zeros(2, np.int64)
-
-    inner = np.empty(n, np.int64)
-    outer = np.empty(n, np.int64)
-
-    # Same grouping as groups_of_3: never leave a single point on its own.
-    if n % 3 == 1:
-        pair_points = 4
-    elif n % 3 == 2:
-        pair_points = 2
-    else:
-        pair_points = 0
-
-    count = 0
-    cursor = 0
-    while cursor < pair_points:
-        count = _add_segment(
-            org,
-            onext,
-            oprev,
-            free_stack,
-            state,
-            inner,
-            outer,
-            count,
-            cursor,
-            cursor + 1,
-        )
-        cursor += 2
-    while cursor < n:
-        count = _add_triangle(
-            pts,
-            org,
-            onext,
-            oprev,
-            free_stack,
-            state,
-            inner,
-            outer,
-            count,
-            cursor,
-            cursor + 1,
-            cursor + 2,
-        )
-        cursor += 3
-
-    # Bottom-up pairing. Each pass replaces adjacent groups with their merge
-    # and leaves a trailing odd group untouched. prange does not fit this loop:
-    # the right group of pass k is an input to pass k + 1.
-    while count > 1:
-        merged = 0
-        index = 0
-        while index < count:
-            if index + 1 < count:
-                _merge_pair(
-                    pts,
-                    org,
-                    onext,
-                    oprev,
-                    free_stack,
-                    state,
-                    inner,
-                    outer,
-                    index,
-                    index + 1,
-                    merged,
-                )
-                merged += 1
-                index += 2
-            else:
-                inner[merged] = inner[index]
-                outer[merged] = outer[index]
-                merged += 1
-                index += 1
-        count = merged
-
-    return org, onext, oprev, state[0]
+    free_top = np.zeros(1, np.int64)
+    span_high = np.zeros(1, np.int64)
+    span_limit = np.empty(1, np.int64)
+    span_limit[0] = cap
+    _fill_range(
+        pts,
+        0,
+        n,
+        org,
+        onext,
+        oprev,
+        free_stack,
+        free_top,
+        span_high,
+        span_limit,
+        1,
+    )
+    return org, onext, oprev, span_high[0]
 
 
 # -------------------------------- Public type --------------------------------
@@ -464,7 +716,30 @@ class Triangulation:
         self.num_edges = num_edges
 
 
-def triangulate(pts_subset):
+def _as_points(pts_subset):
+    """Return a contiguous float64 array of shape ``(n, 2)``."""
+    pts = np.asarray(pts_subset, dtype=np.float64)
+    if pts.ndim != 2 or pts.shape[1] != 2:
+        raise ValueError("points must have shape (n, 2)")
+    if pts.shape[0] < 2:
+        raise ValueError("need at least two points")
+    return np.ascontiguousarray(pts)
+
+
+def _serial_result(pts):
+    """Run the one-core kernel and trim the edge arrays to its high-water mark."""
+    org, onext, oprev, num_edges = _triangulate(pts)
+    num_edges = int(num_edges)
+    return Triangulation(
+        pts,
+        np.ascontiguousarray(org[:num_edges]),
+        np.ascontiguousarray(onext[:num_edges]),
+        np.ascontiguousarray(oprev[:num_edges]),
+        num_edges,
+    )
+
+
+def triangulate(pts_subset, parallel=True):
     """Triangulate a lexicographically sorted list of 2D points.
 
     Points must already be sorted by increasing x, then increasing y. The
@@ -475,24 +750,21 @@ def triangulate(pts_subset):
     ----------
     pts_subset : array-like, shape (n, 2)
         Sorted coordinates. ``n`` must be at least 2.
+    parallel : bool, optional
+        When True, the default, Numba ``prange`` runs the independent blocks
+        of each merge level together. ``False`` keeps the whole merge on one
+        core. A point set too small to split still uses that one-core kernel.
 
     Returns
     -------
     Triangulation
         Quad-edge arrays for the Delaunay triangulation.
     """
-    pts = np.asarray(pts_subset, dtype=np.float64)
-    if pts.ndim != 2 or pts.shape[1] != 2:
-        raise ValueError("points must have shape (n, 2)")
-    if pts.shape[0] < 2:
-        raise ValueError("need at least two points")
-    pts = np.ascontiguousarray(pts)
-    org, onext, oprev, num_edges = _triangulate(pts)
-    num_edges = int(num_edges)
-    return Triangulation(
-        pts,
-        np.ascontiguousarray(org[:num_edges]),
-        np.ascontiguousarray(onext[:num_edges]),
-        np.ascontiguousarray(oprev[:num_edges]),
-        num_edges,
+    pts = _as_points(pts_subset)
+    if not parallel:
+        return _serial_result(pts)
+    from paralleldelaunay.triangulation_core.triangulation_parallel import (
+        triangulate_prange,
     )
+
+    return triangulate_prange(pts)

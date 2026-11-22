@@ -9,7 +9,7 @@ An example Delaunay triangulation output for 32 points is shown below.
 
 It is a Numba port of Guibas &amp; Stolfi's divide-and-conquer algorithm, which runs in O(*n* log *n*) and is among the [fastest](https://people.eecs.berkeley.edu/~jrs/meshpapers/SuDrysdale.pdf) Delaunay techniques. The kernel does not use edge objects. Each directed edge is an index into parallel arrays: `org[e]` is the origin vertex and `onext[e]` is the next edge counterclockwise around that origin. The symmetric edge is `e ^ 1`, because each undirected edge occupies the pair of slots `2k` and `2k + 1`. The merge loops are marked `@njit`, so Numba compiles them to machine code.
 
-Two limits are part of the design. Numba's `prange` does not fit the recursive divide tree, so the merge stays a serial bottom-up loop. The array layout is also a real rewrite of the kernel, not a wrapper around the old objects. The MPI driver is gone.
+`triangulate` runs that kernel across cores. The divide tree is a bottom-up loop, and `prange` takes each level: every leaf first, then each round of independent merges. `parallel=False` keeps the same kernel on one core. The array layout is a rewrite of the old edge objects, and the MPI driver is gone.
 
 # Installation
 
@@ -53,6 +53,12 @@ make format
 uv run python triangulation_benchmarks.py
 ```
 
+`triangulate` splits the points into blocks and runs each merge level with Numba `prange`. That is the default. Pass `parallel=False` for the one-core kernel. `parallel_benchmark.py` times the two:
+
+```bash
+uv run python parallel_benchmark.py
+```
+
 `scipi_comparison.py` prints one comparison for 1000 points:
 
 ```bash
@@ -73,7 +79,8 @@ This repository is currently structured as follows.
     │   │   │   ├── generate_values.py
     │   │   │   └── split_list.py
     │   │   ├── linear_algebra.py
-    │   │   └── triangulation.py
+    │   │   ├── triangulation.py
+    │   │   └── triangulation_parallel.py
     │   └── utilities
     │       └── settings.py
     ├── tests
@@ -81,6 +88,7 @@ This repository is currently structured as follows.
     │   ├── test_points_tools.py
     │   ├── test_primitives.py
     │   └── test_triangulate.py
+    ├── parallel_benchmark.py
     ├── scipi_comparison.py
     ├── triangulation_benchmarks.py
     └── pyproject.toml
