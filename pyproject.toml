@@ -23,6 +23,7 @@ Repository = "https://github.com/v-hill/parallel-delaunay"
 dev = [
     "black",
     "pre-commit",
+    "pytest>=9.2.0",
 ]
 
 [build-system]
@@ -40,3 +41,6 @@ target-version = ["py311"]
 [tool.isort]
 profile = "black"
 line_length = 79
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

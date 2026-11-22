@@ -27,6 +27,14 @@ Add the published package to another uv project with `uv add parallel-delaunay`.
 uv run python scipi_comparison.py
 ```
 
+# Tests
+
+Unit tests cover the geometry helpers. One test runs the full triangulation and compares its triangles with SciPy.
+
+```bash
+make test
+```
+
 # Benchmarking
 
 ### Single core results
@@ -42,6 +50,7 @@ The MPI path can be checked with `uv run mpiexec -np 4 python triangulation_mpi_
 ## Structure
 This repository is currently structured as follows.
 
+    ├── Makefile
     ├── paralleldelaunay
     │   ├── triangulation_core
     │   │   ├── points_tools
@@ -53,6 +62,11 @@ This repository is currently structured as follows.
     │   │   └── triangulation_primitives.py
     │   └── utilities
     │       └── settings.py
+    ├── tests
+    │   ├── test_linear_algebra.py
+    │   ├── test_points_tools.py
+    │   ├── test_primitives.py
+    │   └── test_triangulate.py
     ├── scipi_comparison.py
     ├── triangulation_benchmarks.py
     ├── triangulation_mpi_test.py
