@@ -4,7 +4,16 @@
 
 <img src="https://raw.githubusercontent.com/v-hill/parallel-delaunay/v2.0.0/images/Figure%202021-02-24%20110617.png" alt="Delaunay triangulation of 32 points" width="500"/>
 
-The kernel is [Guibas and Stolfi's](https://doi.org/10.1145/282918.282923) divide-and-conquer algorithm, compiled with Numba. An edge is an index into integer arrays, not an object: `org[e]` is the origin, `onext[e]` is the next edge counterclockwise around that origin, and the symmetric edge is `e ^ 1` because each undirected edge occupies slots `2k` and `2k+1`. `triangulate` runs every leaf at once, then each round of independent merges, using `prange`. `parallel=False` runs the same kernel on one core.
+```python
+from paralleldelaunay import Delaunay
+
+tri = Delaunay(points)
+tri.simplices  # (m, 3) indices into the points you passed
+```
+
+Points can arrive in any order. `parallel=False` runs one core.
+
+The kernel is [Guibas and Stolfi's](https://doi.org/10.1145/282918.282923) divide-and-conquer algorithm, compiled with Numba. An edge is an index into integer arrays, not an object: `org[e]` is the origin, `onext[e]` is the next edge counterclockwise around that origin, and the symmetric edge is `e ^ 1` because each undirected edge occupies slots `2k` and `2k+1`. `Delaunay` runs every leaf at once, then each round of independent merges, using `prange`.
 
 ## Install
 
